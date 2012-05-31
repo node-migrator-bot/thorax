@@ -389,6 +389,19 @@ The following events will be triggered when the collection is rendered:
 - `rendered:item` - called for each item rendered in a non empty collection after `renderCollection` is called, receives the item element or view after it has been rendered
 - `rendered:empty` - called when `renderCollection` is called with an empty collection, receives the the collection element
 
+### empty *{{#empty [collection]}}*
+
+    {{#empty}}
+      Empty view or empty model
+    {{/empty}}
+
+    {{#empty myCollection}}
+      Empty collection
+    {{else}}
+      {{collection myCollection}}
+    {{/empty}}
+
+
 ### renderCollection *view.renderCollection()*
 
 Re-render the entire collection. If you need custom behavior when a collection is rendered it is better to use the `rendered` or `rendered:collection` events. This method looks for `this.collection` which should be set by `setCollection` and ignores any arguments passed.
