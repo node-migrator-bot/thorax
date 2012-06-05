@@ -16,19 +16,37 @@
     throw new Error('Backbone.js required to run Thorax');
   }
 
-  var TemplateEngine = {
-    extension: 'handlebars',
-    safeString: function(string) {
-      return new Handlebars.SafeString(string);
-    },
-    registerHelper: function(name, callback) {
-      return Handlebars.registerHelper(name, callback);
-    },
-    compile: function(source) {
-      return Handlebars.compile(source);
+  var Thorax, scope, templatePathPrefix,
+    handlebarsExtension = 'handlebars',
+    handlebarsExtensionRegExp = new RegExp('\\.' + handlebarsExtension + '$');
+
+  this.Thorax = Thorax = {
+    configure: function(options) {
+      scope = (options && options.scope) || (typeof exports !== 'undefined' && exports);
+
+      if (!scope) {
+        scope = outerScope.Application = {};
+      }
+
+      _.extend(scope, Backbone.Events, {
+        templates: {},
+        Views: {},
+        Mixins: {},
+        Models: {},
+        Collections: {},
+        Routers: {}
+      });
+
+      templatePathPrefix = options && typeof options.templatePathPrefix !== 'undefined' ? options.templatePathPrefix : '';
+      
+      Backbone.history || (Backbone.history = new Backbone.History);
+
+      scope.layout = new Thorax.Layout({
+        el: options && options.layout || '.layout'
+      });
+
     }
   };
-  TemplateEngine.extensionRegExp = new RegExp('\\.' + TemplateEngine.extension + '$');
 
   //private vars for Thorax.View
   var view_name_attribute_name = 'data-view-name',
@@ -43,6 +61,10 @@
 
   //wrap Backbone.View constructor to support initialize event
   Backbone.View = function(options) {
+    this._childEvents = [];
+    this.cid = _.uniqueId('view');
+    this._boundCollectionsByCid = {};
+    this._renderCount = 0;
     this._configure(options || {});
     this._ensureElement();
     this.delegateEvents();
@@ -54,20 +76,15 @@
   Backbone.View.prototype = old_backbone_view.prototype;
   Backbone.View.extend = old_backbone_view.extend;
 
-  var View = Backbone.View.extend({
+  Thorax.View = Backbone.View.extend({
     _configure: function(options) {
-      this._childEvents = [];
-      this.cid = _.uniqueId('view');
-      this._boundCollectionsByCid = {};
-      this._renderCount = 0;
-
       //this.options is removed in Thorax.View, we merge passed
       //properties directly with the view and template context
       _.extend(this, options || {});
 
       //compile a string template if it is set as this.template
       if (typeof this.template === 'string') {
-        this._template = TemplateEngine.compile(this.template);
+        this._template = Handlebars.compile(this.template);
         this.template = renderTemplate;
       }
       
@@ -118,7 +135,7 @@
         if (typeof name === 'function') {
           name.call(this);
         } else {
-          var mixin = this.registry.Mixins[name];
+          var mixin = scope.Mixins[name];
           _.extend(this, mixin[1]);
           //mixin callback may be an array of [callback, arguments]
           if (_.isArray(mixin[0])) {
@@ -140,10 +157,10 @@
       }
 
       if (typeof name === 'string') {
-        if (!this.registry.Views[name]) {
+        if (!scope.Views[name]) {
           throw new Error('view: ' + name + ' does not exist.');
         }
-        instance = new this.registry.Views[name](options);
+        instance = new scope.Views[name](options);
       } else {
         instance = name;
       }
@@ -161,7 +178,7 @@
     template: renderTemplate,
 
     loadTemplate: function(file, data, scope) {
-      var fileName = templatePathPrefix + file + (file.match(TemplateEngine.extensionRegExp) ? '' : '.' + TemplateEngine.extension);
+      var fileName = templatePathPrefix + file + (file.match(handlebarsExtensionRegExp) ? '' : '.' + handlebarsExtension);
       return scope.templates[fileName];
     },
   
@@ -364,7 +381,7 @@
       //end DEPRECATION
       this.render();
       var collection_element = getCollectionElement.call(this, collection).empty();
-      if (collection.length === 0 && collection.isPopulated()) {
+      if (collection.isEmpty()) {
         appendEmpty.call(this, collection);
       } else {
         collection.forEach(function(item, i) {
@@ -406,7 +423,7 @@
         if (!emptyTemplate) {
           var name = getViewName.call(this, true);
           if (name) {
-            emptyTemplate = this.loadTemplate(name + '-empty', {}, this.registry);
+            emptyTemplate = this.loadTemplate(name + '-empty', {}, scope);
           }
           if (!emptyTemplate) {
             return;
@@ -650,10 +667,10 @@
   }, {
     registerHelper: function(name, callback) {
       this[name] = callback;
-      TemplateEngine.registerHelper(name, this[name]);
+      Handlebars.registerHelper(name, this[name]);
     },
     registerMixin: function(name, callback, methods) {
-      this.prototype.registry.Mixins[name] = [callback, methods];
+      scope.Mixins[name] = [callback, methods];
     },
     mixins: [],
     mixin: function(mixin) {
@@ -695,10 +712,10 @@
   });
 
   //events and mixins properties need act as inheritable, not static / shared
-  View.extend = function(protoProps, classProps) {
+  Thorax.View.extend = function(protoProps, classProps) {
     var child = Backbone.View.extend.call(this, protoProps, classProps);
     if (child.prototype.name) {
-      this.registry.Views[child.prototype.name] = child;
+      scope.Views[child.prototype.name] = child;
     }
     child.mixins = _.clone(this.mixins);
     cloneEvents(this, child, 'events');
@@ -717,7 +734,7 @@
     });
   }
 
-  View.registerEvents({
+  Thorax.View.registerEvents({
     //built in dom events
     'submit form': function(event) {
       // Hide any virtual keyboards that may be lingering around
@@ -803,7 +820,7 @@
   });
   
   var viewTemplateOverrides = {};
-  View.registerHelper('view', function(view, options) {
+  Thorax.View.registerHelper('view', function(view, options) {
     if (!view) {
       return '';
     }
@@ -812,16 +829,16 @@
     if (options.fn) {
       viewTemplateOverrides[placeholder_id] = options.fn;
     }
-    return TemplateEngine.safeString('<div ' + view_placeholder_attribute_name + '="' + placeholder_id + '"></div>');
+    return new Handlebars.SafeString('<div ' + view_placeholder_attribute_name + '="' + placeholder_id + '"></div>');
   });
   
-  View.registerHelper('template', function(name, options) {
+  Thorax.View.registerHelper('template', function(name, options) {
     var context = _.extend({}, this, options ? options.hash : {});
     var output = Thorax.View.prototype.template.call(this._view, name, context);
-    return TemplateEngine.safeString(output);
+    return new Handlebars.SafeString(output);
   });
 
-  View.registerHelper('collection', function(collection, options) {
+  Thorax.View.registerHelper('collection', function(collection, options) {
     //DEPRECATION: backwards compatibility with < 1.3
     if (arguments.length === 1) {
       options = collection;
@@ -830,8 +847,8 @@
     //end DEPRECATION
     if (collection) {
       var collectionOptionsToExtend = {
-        'item-template': options.fn || options.hash['item-template'],
-        'empty-template': options.hash['empty-template'],
+        'item-template': options.fn && options.fn !== Handlebars.VM.noop ? options.fn : options.hash['item-template'],
+        'empty-template': options.inverse && options.inverse !== Handlebars.VM.noop ? options.inverse : options.hash['empty-template'],
         'item-view': options.hash['item-view'],
         'empty-view': options.hash['empty-view']
       };
@@ -848,23 +865,23 @@
       var htmlAttributes = _.map(collectionHelperOptions, function(value, key) {
         return key + '="' + value + '"';
       }).join(' ');
-      return TemplateEngine.safeString('<' + tag + ' ' + htmlAttributes + '></' + tag + '>');
+      return new Handlebars.SafeString('<' + tag + ' ' + htmlAttributes + '></' + tag + '>');
     } else {
       return '';
     }
   });
 
-  View.registerHelper('empty', function(collection, options) {
+  Thorax.View.registerHelper('empty', function(collection, options) {
     var empty;
     if (!options) {
       options = arguments[0];
-      empty = !this._view.model || (this._view.model && !this._view.model.isPopulated());
+      empty = !this._view.model || (this._view.model && !this._view.model.isEmpty());
     } else {
       if (!collection) {
         empty = true;
       } else {
         ensureCollectionIsBound.call(this._view, collection);
-        empty = !collection.isPopulated();
+        empty = collection.isEmpty();
         this._view._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange = true;
       }
     }
@@ -876,7 +893,7 @@
     }
   });
 
-  View.registerHelper('link', function(url) {
+  Thorax.View.registerHelper('link', function(url) {
     return (Backbone.history._hasPushState ? Backbone.history.options.root : '#') + url;
   });
 
@@ -926,7 +943,7 @@
     if (typeof file === 'function') {
       template = file;
     } else {
-      template = this.loadTemplate(file, data, this.registry);
+      template = this.loadTemplate(file, data, scope);
     }
     if (!template) {
       if (ignoreErrors) {
@@ -1191,9 +1208,9 @@
       this.mixin(mixin);
     }
   }
-
+  
   //main layout class, instance of which is available on scope.layout
-  var Layout = Backbone.View.extend({
+  Thorax.Layout = Backbone.View.extend({
     events: {
       'click a': 'anchorClick'
     },
@@ -1242,7 +1259,7 @@
     }
   });
 
-  var Router = Backbone.Router.extend({
+  Thorax.Router = Backbone.Router.extend({
     view: function(name, attributes) {
       if (!scope.Views[name]) {
         throw new Error('view: ' + name + ' does not exist.');
@@ -1295,7 +1312,10 @@
     return _.bind(finalizer, this, false);
   }
 
-  var Model = Backbone.Model.extend({
+  Thorax.Model = Backbone.Model.extend({
+    isEmpty: function() {
+      return this.isPopulated();
+    },
     isPopulated: function() {
       // We are populated if we have attributes set
       var attributes = _.clone(this.attributes);
@@ -1315,7 +1335,7 @@
     load: loadData
   });
 
-  Model.extend = function(protoProps, classProps) {
+  Thorax.Model.extend = function(protoProps, classProps) {
     var child = Backbone.Model.extend.call(this, protoProps, classProps);
     if (child.prototype.name) {
       scope.Models[child.prototype.name] = child;
@@ -1323,10 +1343,17 @@
     return child;
   };
 
-  var Collection = Backbone.Collection.extend({
-    model: Model,
+  Thorax.Collection = Backbone.Collection.extend({
+    model: Thorax.Model,
+    isEmpty: function() {
+      if (this.length > 0) {
+        return false;
+      } else {
+        return this.length === 0 && this.isPopulated();
+      }
+    },
     isPopulated: function() {
-      return this._fetched || this.length > 0;
+      return this._fetched || this.length > 0 || (!this.length && !getValue(this, 'url'));
     },
     fetch: function(options) {
       options = options || {};
@@ -1344,7 +1371,7 @@
     load: loadData
   });
 
-  Collection.extend = function(protoProps, classProps) {
+  Thorax.Collection.extend = function(protoProps, classProps) {
     var child = Backbone.Collection.extend.call(this, protoProps, classProps);
     if (child.prototype.name) {
       scope.Collections[child.prototype.name] = child;
@@ -1408,76 +1435,4 @@
       }
     }
   }
-
-  var Application = Layout.extend({
-    initialize: function() {
-      //DEPRECATION: for backwards compatibility
-      this.layout = this;
-
-      _.extend(this, {
-        templates: {},
-        Views: {},
-        Mixins: {},
-        Models: {},
-        Collections: {},
-        Routers: {}
-      });
-      _.extend({
-        Application: Application.extend(),
-        Layout: Layout.extend(),
-        View: View.extend({
-          registry: this
-        }),
-        Model: Model.extend({
-          registry: this
-        }),
-        Collection: Collection({
-          registry: this
-        })
-      }
-    }
-  });
-
-  var Thorax;
-
-  this.Thorax = Thorax = {
-    Application: Application,
-    Layout: Layout,
-    View: View,
-    Model: Model,
-    Collection: Collection
-  };
-
-  //DEPRECATION: backwards compatibility with < 1.3
-  //Thorax.configure = function() {
-  //  scope = (options && options.scope) || (typeof exports !== 'undefined' && exports);
-//
-  //  if (!scope) {
-  //    scope = outerScope.Application ;
-  //  }
-  //  scope.layout =
-  //    templatePathPrefix = options && typeof options.templatePathPrefix !== 'undefined' ? options.templatePathPrefix : '';
-  //}
-//
-  //var Thorax, scope, templatePathPrefix;
-//
-  //this.Thorax = Thorax = 
-//
-//
-  //{
-  //  configure: function(options) {
-//
-  //    
-//
-  //    
-  //    Backbone.history || (Backbone.history = new Backbone.History);
-//
-  //    scope.layout = new Thorax.Layout({
-  //      el: options && options.layout || '.layout'
-  //    });
-  //  }
-  //};
-
-
 }).call(this, this);
- 

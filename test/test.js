@@ -200,6 +200,15 @@ $(function() {
     equal(view.$('li').length, letterCollection.models.length * 2);
   });
 
+  test("inverse block in collection helper", function() {
+    var emptyCollectionView = new Thorax.View({
+      template: '{{#collection}}<div>{{letter}}</div>{{else}}<div>empty</div>{{/collection}}',
+      collection: new Thorax.Collection()
+    });
+    emptyCollectionView.render();
+    equal(emptyCollectionView.$('[data-collection-cid]').html(), '<div>empty</div>');
+  });
+
   test("nested collection helper", function() {
     var blogModel = new Thorax.Model();
     Thorax.View.extend({
