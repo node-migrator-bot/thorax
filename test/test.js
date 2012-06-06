@@ -2,9 +2,10 @@
 
 $(function() {
 
-  Thorax.configure({
+  var Application = new Thorax.Application({
     templatePathPrefix: ''
   });
+  Application.start();
 
   Application.templates = {
     'letter.handlebars': Handlebars.compile('{{collection tag="ul"}}'), 
@@ -16,21 +17,21 @@ $(function() {
     'form.handlebars': Handlebars.compile('<form><input name="one"/><select name="two"><option value="a">a</option><option value="b">b</option></select><input name="three[four]"/></form>')
   };
 
-  var LetterModel = Thorax.Model.extend({});
+  var LetterModel = Application.Model.extend({});
 
-  var letterCollection = new Thorax.Collection(['a','b','c','d'].map(function(letter) {
+  var letterCollection = new Application.Collection(['a','b','c','d'].map(function(letter) {
     return {letter: letter};
   }));
 
-  var LetterCollectionView = Thorax.View.extend({
+  var LetterCollectionView = Application.View.extend({
     name: 'letter'
   });
 
-  var LetterItemView = Thorax.View.extend({
+  var LetterItemView = Application.View.extend({
     name: 'letter-item'
   });
 
-  var LetterEmptyView = Thorax.View.extend({
+  var LetterEmptyView = Application.View.extend({
     name: 'letter-empty'
   });
 
@@ -75,7 +76,7 @@ $(function() {
       }
 
       ok(!view.el.firstChild, 'no render until setCollection');
-      var clonedLetterCollection = new Thorax.Collection(letterCollection.models),
+      var clonedLetterCollection = new Application.Collection(letterCollection.models),
           renderedItemCount = 0,
           renderedCollectionCount = 0,
           renderedEmptyCount = 0,
@@ -164,77 +165,77 @@ $(function() {
     }));
     runCollectionTests(viewReturningMultiple, 2);
 
-    var viewWithBlockCollectionHelper = new Thorax.View({
+    var viewWithBlockCollectionHelper = new Application.View({
       template: '{{#collection tag="ul" empty-template="letter-empty"}}<li>{{letter}}</li>{{/collection}}'
     });
     runCollectionTests(viewWithBlockCollectionHelper, 1);
 
-    var viewWithBlockCollectionHelperWithViews = new Thorax.View({
+    var viewWithBlockCollectionHelperWithViews = new Application.View({
       template: '{{collection tag="ul" empty-template="letter-empty" item-view="letter-item"}}'
     });
     runCollectionTests(viewWithBlockCollectionHelperWithViews, 1);
 
-    var viewWithBlockCollectionHelperWithViewsAndBlock = new Thorax.View({
+    var viewWithBlockCollectionHelperWithViewsAndBlock = new Application.View({
       template: '{{#collection tag="ul" empty-template="letter-empty" item-view="letter-item"}}<li class="testing">{{letter}}</li>{{/collection}}'
     });
     runCollectionTests(viewWithBlockCollectionHelperWithViewsAndBlock, 1);
 
-    var viewWithCollectionHelperWithEmptyView = new Thorax.View({
+    var viewWithCollectionHelperWithEmptyView = new Application.View({
       template: '{{collection tag="ul" empty-view="letter-empty" item-template="letter-item"}}'
     });
     runCollectionTests(viewWithCollectionHelperWithEmptyView, 1);
 
-    var viewWithCollectionHelperWithEmptyViewAndBlock = new Thorax.View({
+    var viewWithCollectionHelperWithEmptyViewAndBlock = new Application.View({
       template: '{{collection tag="ul" empty-templatve="letter-empty" empty-view="letter-empty" item-template="letter-item"}}'
     });
     runCollectionTests(viewWithCollectionHelperWithEmptyViewAndBlock, 1);
   });
 
   test("multiple collections", function() {
-    var view = new Thorax.View({
+    var view = new Application.View({
       template: '{{collection a tag="ul" item-template="letter-item"}}{{collection b tag="ul" item-template="letter-item"}}',
-      a: new Thorax.Collection(letterCollection.models),
-      b: new Thorax.Collection(letterCollection.models)
+      a: new Application.Collection(letterCollection.models),
+      b: new Application.Collection(letterCollection.models)
     });
     view.render();
     equal(view.$('li').length, letterCollection.models.length * 2);
   });
 
   test("inverse block in collection helper", function() {
-    var emptyCollectionView = new Thorax.View({
+    var emptyCollectionView = new Application.View({
       template: '{{#collection}}<div>{{letter}}</div>{{else}}<div>empty</div>{{/collection}}',
-      collection: new Thorax.Collection()
+      collection: new Application.Collection()
     });
     emptyCollectionView.render();
     equal(emptyCollectionView.$('[data-collection-cid]').html(), '<div>empty</div>');
   });
 
   test("nested collection helper", function() {
-    var blogModel = new Thorax.Model();
-    Thorax.View.extend({
+    var blogModel = new Application.Model();
+    Application.View.extend({
       name: 'Comments',
       template: '{{#collection comments}}<p>{{comment}}</p>{{/collection}}'
     });
-    var view = new Thorax.View({
+    var view = new Application.View({
       template: '{{#empty posts}}empty{{else}}{{#collection posts name="outer"}}<h2>{{title}}</h2>{{view "Comments" comments=comments}}</div>{{/collection}}{{/empty}}',
       model: blogModel
     });
     equal(view.html(), 'empty');
-    var comments1 = new Thorax.Collection([
-      new Thorax.Model({comment: 'comment one'}),
-      new Thorax.Model({comment: 'comment two'})
+    var comments1 = new Application.Collection([
+      new Application.Model({comment: 'comment one'}),
+      new Application.Model({comment: 'comment two'})
     ]);
-    var comments2 = new Thorax.Collection([
-      new Thorax.Model({comment: 'comment three'}),
-      new Thorax.Model({comment: 'comment four'})
+    var comments2 = new Application.Collection([
+      new Application.Model({comment: 'comment three'}),
+      new Application.Model({comment: 'comment four'})
     ]);
     blogModel.set({
-      posts: new Thorax.Collection([
-        new Thorax.Model({
+      posts: new Application.Collection([
+        new Application.Model({
           title: 'title one',
           comments: comments1
         }),
-        new Thorax.Model({
+        new Application.Model({
           title: 'title two',
           comments: comments2
         })
@@ -249,10 +250,10 @@ $(function() {
     equal(view.$('p')[2].innerHTML, 'comment three');
     equal(view.$('p')[3].innerHTML, 'comment four');
 
-    comments2.add(new Thorax.Model({comment: 'comment five'}));
+    comments2.add(new Application.Model({comment: 'comment five'}));
     equal(view.$('p')[4].innerHTML, 'comment five');
 
-    blogModel.attributes.posts.add(new Thorax.Model({
+    blogModel.attributes.posts.add(new Application.Model({
       title: 'title three'
     }));
     equal(view.$('h2').length, 3);
@@ -260,44 +261,44 @@ $(function() {
   });
 
   test("graceful failure of empty collection with no empty template", function() {
-    var view = new Thorax.View({
+    var view = new Application.View({
       template: '{{collection item-template="letter-item"}}',
-      collection: new Thorax.Collection({
+      collection: new Application.Collection({
         isPopulated: function() {
           return true;
         }
       })
     });
     view.render();
-    view = new Thorax.View({
+    view = new Application.View({
       template: '{{collection item-template="letter-item"}}',
-      collection: new Thorax.Collection
+      collection: new Application.Collection
     });
     view.render();
     ok(true);
   });
 
   test("empty helper", function() {
-    var emptyView = new Thorax.View({
+    var emptyView = new Application.View({
       template: '{{#empty}}empty{{else}}not empty{{/empty}}'
     });
     emptyView.render();
     equal(emptyView.html(), 'empty');
-    var emptyModelView = new Thorax.View({
+    var emptyModelView = new Application.View({
       template: '{{#empty}}empty{{else}}not empty{{/empty}}',
-      model: new Thorax.Model()
+      model: new Application.Model()
     });
     emptyModelView.render();
     equal(emptyModelView.html(), 'empty');
     emptyModelView.model.set({key: 'value'});
     equal(emptyModelView.html(), 'not empty');
-    var emptyCollectionView = new Thorax.View({
+    var emptyCollectionView = new Application.View({
       template: '{{#empty myCollection}}empty{{else}}not empty{{/empty}}',
-      myCollection: new Thorax.Collection()
+      myCollection: new Application.Collection()
     });
     emptyCollectionView.render();
     equal(emptyCollectionView.html(), 'empty');
-    var model = new Thorax.Model();
+    var model = new Application.Model();
     emptyCollectionView.myCollection.add(model);
     equal(emptyCollectionView.html(), 'not empty');
     emptyCollectionView.myCollection.remove(model);
@@ -307,7 +308,7 @@ $(function() {
   test("Child views", function() {
     var childRenderedCount = 0,
         parentRenderedCount = 0;
-    var Child = Thorax.View.extend({
+    var Child = Application.View.extend({
       name: 'child',
       events: {
         rendered: function() {
@@ -315,7 +316,7 @@ $(function() {
         }
       }
     });
-    var Parent = Thorax.View.extend({
+    var Parent = Application.View.extend({
       name: 'parent',
       events: {
         rendered: function() {
@@ -323,7 +324,7 @@ $(function() {
         }
       },
       initialize: function() {
-        this.childModel = new Thorax.Model({
+        this.childModel = new Application.Model({
           value: 'a'
         });
         this.child = this.view('child', {
@@ -356,7 +357,7 @@ $(function() {
   });
   
   test("Template not found handling", function() {
-    var view = new Thorax.View();
+    var view = new Application.View();
     equal('', view.template('foo', {}, true));
     raises(function() {
       view.template('foo');
@@ -364,38 +365,38 @@ $(function() {
   });
   
   test("render() subclassing", function() {
-    var a = new Thorax.View({
+    var a = new Application.View({
       render: function() {
-        Thorax.View.prototype.render.call(this, '<p>a</p>');
+        Application.View.prototype.render.call(this, '<p>a</p>');
       }
     });
     a.render();
 
-    var b = new Thorax.View({
+    var b = new Application.View({
       render: function() {
-        Thorax.View.prototype.render.call(this, $('<p>b</p>'));
+        Application.View.prototype.render.call(this, $('<p>b</p>'));
       }
     });
     b.render();
 
-    var c = new Thorax.View({
+    var c = new Application.View({
       render: function() {
         var el = document.createElement('p');
         el.innerHTML = 'c';
-        Thorax.View.prototype.render.call(this, el);
+        Application.View.prototype.render.call(this, el);
       }
     });
     c.render();
 
-    var d = new Thorax.View({
+    var d = new Application.View({
       render: function() {
-        var view = new Thorax.View({
+        var view = new Application.View({
           render: function() {
-            Thorax.View.prototype.render.call(this, '<p>d</p>');
+            Application.View.prototype.render.call(this, '<p>d</p>');
           }
         });
         view.render();
-        Thorax.View.prototype.render.call(this, view);
+        Application.View.prototype.render.call(this, view);
       }
     });
     d.render();
@@ -411,21 +412,21 @@ $(function() {
   });
 
   test("template passed to constructor and view block", function() {
-    var view = new Thorax.View({
+    var view = new Application.View({
       template: '<p>{{key}}</p>',
       key: 'value'
     });
     view.render();
     equal(view.$('p').html(), 'value');
 
-    var view = new (Thorax.View.extend({
+    var view = new (Application.View.extend({
       template: '<p>{{key}}</p>',
       key: 'value'
     }));
     view.render();
     equal(view.$('p').html(), 'value');
 
-    var Child = Thorax.View.extend({
+    var Child = Application.View.extend({
       template: '<div class="child-a">{{key}}</div>',
       key: 'value'
     });
@@ -433,7 +434,7 @@ $(function() {
     var a = new Child;
     var b = new Child;
 
-    var parent = new Thorax.View({
+    var parent = new Application.View({
       template: '<div class="parent">{{#view b}}<div class="child-b">{{key}}</div>{{/view}}{{view a}}</div>',
       a: a,
       b: b
@@ -447,10 +448,10 @@ $(function() {
     equal(b.$('.child-a').html(), 'value');
 
     //test nesting
-    var outer = new Thorax.View({
+    var outer = new Application.View({
       template: '<div class="a">{{#view inner}}<div class="b">{{#view child}}<div class="c">value</div>{{/view}}</div>{{/view}}</div>',
-      inner: new Thorax.View({
-        child: new Thorax.View
+      inner: new Application.View({
+        child: new Application.View
       })
     });
     outer.render();
@@ -458,7 +459,7 @@ $(function() {
   });
   
   test("Inheritable events", function() {
-    var Parent = Thorax.View.extend({}),
+    var Parent = Application.View.extend({}),
         aCount = 0,
         bCount = 0;
     Parent.registerEvents({
@@ -482,7 +483,7 @@ $(function() {
     equal(bCount, 1);
   
     //ensure events are properly cloned
-    Parent = Thorax.View.extend();
+    Parent = Application.View.extend();
     Parent.registerEvents({
       a: 1
     });
@@ -501,7 +502,7 @@ $(function() {
   });
 
   test("Multiple event registration", function() {
-    var view = new Thorax.View(), a = 0, b = 0, c = 0, d = 0, e = 0;
+    var view = new Application.View(), a = 0, b = 0, c = 0, d = 0, e = 0;
     view.registerEvents({
       'a,b': function() {
         ++a;
@@ -539,7 +540,7 @@ $(function() {
     var childClickedCount = 0,
         parentClickedCount = 0;
     
-    var Child = Thorax.View.extend({
+    var Child = Application.View.extend({
       name: 'child',
       events: {
         'click div': function() {
@@ -548,7 +549,7 @@ $(function() {
       }
     });
     
-    var Parent = Thorax.View.extend({
+    var Parent = Application.View.extend({
       name: 'parent',
       events: {
         'click div': function() {
@@ -594,7 +595,7 @@ $(function() {
 
     //test nested view events
     var testTriggerCount = 0;
-    Parent = Thorax.View.extend({
+    Parent = Application.View.extend({
       events: {
         'nested test': function() {
           ++testTriggerCount;
@@ -602,8 +603,8 @@ $(function() {
         }
       },
       initialize: function() {
-        this.view(this.child = new Thorax.View());
-        this.child.view(this.child.child = new Thorax.View());
+        this.view(this.child = new Application.View());
+        this.child.view(this.child.child = new Application.View());
       }
     });
     parent = new Parent();
@@ -614,11 +615,11 @@ $(function() {
   });
   
   test("serialize() / populate()", function() {
-    var FormView = Thorax.View.extend({
+    var FormView = Application.View.extend({
       name: 'form'
     });
   
-    var model = new Thorax.Model({
+    var model = new Application.Model({
       one: 'a',
       two: 'b',
       three: {
@@ -659,10 +660,10 @@ $(function() {
     equal(errorCallbackCallCount, 1, "error event triggered when validateInput returned errors");
   });
   
-  test("Test thorax.layout", function() {
-    var a = new Thorax.View({
+  test("Test thorax layout", function() {
+    var a = new Application.View({
       render: function() {
-        Thorax.View.prototype.render.call(this, 'a');
+        Application.View.prototype.render.call(this, 'a');
       }
     });
     var aEventCounter = {};
@@ -671,9 +672,9 @@ $(function() {
       ++aEventCounter[eventName];
     });
   
-    var b = new Thorax.View({
+    var b = new Application.View({
       render: function() {
-        Thorax.View.prototype.render.call(this, 'b');
+        Application.View.prototype.render.call(this, 'b');
       }
     });
     var bEventCounter = {};
@@ -682,15 +683,15 @@ $(function() {
       ++bEventCounter[eventName];
     });
   
-    ok(!Application.layout.view, 'layout does not start with a view');
+    ok(!Application.view, 'layout does not start with a view');
   
-    Application.layout.setView(a);
-    equal(Application.layout.view, a, 'layout sets view');
-    ok(Application.layout.$('[data-view-name]').length, 'layout updates HTML')
+    Application.setView(a);
+    equal(Application.view, a, 'layout sets view');
+    ok(Application.$('[data-view-name]').length, 'layout updates HTML')
   
     b.render();
-    Application.layout.setView(b);
-    equal(Application.layout.view, b, 'layout sets view');
+    Application.setView(b);
+    equal(Application.view, b, 'layout sets view');
   
     //lifecycle checks
     equal(aEventCounter.rendered, 1);
@@ -705,13 +706,66 @@ $(function() {
     ok(!bEventCounter.deactivated);
     ok(!bEventCounter.destroyed);
 
-    Application.layout.setView(false);
-    ok(!Application.layout.view, 'layout can set to empty view');
+    Application.setView(false);
+    ok(!Application.view, 'layout can set to empty view');
     equal(bEventCounter.rendered, 1);
     equal(bEventCounter.activated, 1);
     equal(bEventCounter.ready, 1);
     equal(bEventCounter.deactivated, 1);
     equal(bEventCounter.destroyed, 1);
+  });
+
+  test("multiple application objects can co-exist", function() {
+    var a = new Thorax.Application();
+    var b = new Thorax.Application;
+
+    a.View.extend({name: 'a'});
+    b.View.extend({name: 'b'});
+    ok(a.Views.a);
+    ok(!a.Views.b);
+    ok(b.Views.b);
+    ok(!b.Views.a);
+  });
+
+  test("nested layouts", function() {
+    var application = new Thorax.Application;
+    var linkView = application.View.extend({
+      template: '<a href="#index">index</a>'
+    });
+    var view = new application.View({
+      template: '{{view layoutView}}{{view linkView}}',
+      initialize: function() {
+        this.layoutView = new application.Layout;
+        this.nestedLinkView = new linkView;
+        this.layoutView.setView(this.nestedLinkView);
+        this.linkView = new linkView;
+      }
+    });
+    application.setView(view);
+    document.body.appendChild(application.el);
+    var callCount = 0;
+    var router = new (application.Router.extend({
+      routes: {
+        'index': 'index'
+      },
+      index: function() {
+        ++callCount;
+      }
+    }));
+    Backbone.history.navigate('', {trigger: false});
+    equal(callCount, 0);
+    var outerLink = view.$('a')[0];
+    var click = $.Event('click');
+    click.currentTarget = outerLink;
+    $(outerLink).trigger(click);
+    equal(callCount, 1);
+    Backbone.history.navigate('', {trigger: false});
+    var innerLink = view.nestedLinkView.$('a')[0];
+    click = $.Event('click');
+    click.currentTarget = innerLink;
+    $(innerLink).trigger(click);
+    equal(callCount, 2);
+    document.body.removeChild(application.el);
   });
 
 });
