@@ -832,7 +832,7 @@
       };
       ensureCollectionIsBound.call(this._view, collection, collectionOptionsToExtend);
       var collectionHelperOptions = _.clone(options.hash),
-          tag = (collectionHelperOptions.tag || 'div');
+          tag = (collectionHelperOptions.tag || collectionHelperOptions.tagName || 'div');
       _.keys(collectionOptionsToExtend).forEach(function(key) {
         delete collectionHelperOptions[key];
       });
