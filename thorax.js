@@ -385,7 +385,9 @@
         appendEmpty.call(this, collection);
       } else {
         collection.forEach(function(item, i) {
-          this.appendItem(collection, item, i);
+          this.appendItem(collection, item, i, {
+            collectionElement: collection_element
+          });
         }, this);
       }
       this.trigger('rendered:collection', collection_element, collection);
@@ -459,7 +461,7 @@
       }
 
       var item_view,
-          collection_element = getCollectionElement.call(this, collection);
+          collection_element = (options && options.collectionElement) || getCollectionElement.call(this, collection);
 
       options = options || {};
 
@@ -788,7 +790,9 @@
           this.render();
         }
         if (collection_element.length) {
-          this.appendItem(collection, model, collection.indexOf(model));
+          this.appendItem(collection, model, collection.indexOf(model), {
+            collectionElement: collection_element
+          });
         }
       },
       remove: function(model, collection) {
@@ -1196,8 +1200,11 @@
   }
 
   function appendEmpty(collection) {
-    getCollectionElement.call(this, collection).empty();
-    this.appendItem(collection, this.renderEmpty(collection), 0, {silent: true});
+    var collection_element = getCollectionElement.call(this, collection).empty();
+    this.appendItem(collection, this.renderEmpty(collection), 0, {
+      silent: true,
+      collectionElement: collection_element
+    });
     this.trigger('rendered:empty', collection);
   }
 
@@ -1268,49 +1275,12 @@
     },
     setView: function() {
       return scope.layout.setView.apply(scope.layout, arguments);
-    },
-    bindToRoute: bindToRoute
+    }
   },{
     create: function(module, protoProps, classProps) {
       return scope.Routers[module.name] = new (this.extend(_.extend({}, module, protoProps), classProps));
-    },
-    bindToRoute: bindToRoute
-  });
-
-  function bindToRoute(callback, failback) {
-    var fragment = Backbone.history.getFragment(),
-        completed;
-
-    function finalizer(isCanceled) {
-      var same = fragment === Backbone.history.getFragment();
-
-      if (completed) {
-        // Prevent multiple execution, i.e. we were canceled but the success callback still runs
-        return;
-      }
-
-      if (isCanceled && same) {
-        // Ignore the first route event if we are running in newer versions of backbone
-        // where the route operation is a postfix operation.
-        return;
-      }
-
-      completed = true;
-      Backbone.history.unbind('route', resetLoader);
-
-      var args = Array.prototype.slice.call(arguments, 1);
-      if (!isCanceled && same) {
-        callback.apply(this, args);
-      } else {
-        failback && failback.apply(this, args);
-      }
     }
-
-    var resetLoader = _.bind(finalizer, this, true);
-    Backbone.history.bind('route', resetLoader);
-
-    return _.bind(finalizer, this, false);
-  }
+  });
 
   Thorax.Model = Backbone.Model.extend({
     isEmpty: function() {
@@ -1328,11 +1298,7 @@
       }
       var keys = _.keys(attributes);
       return keys.length > 1 || (keys.length === 1 && keys[0] !== 'id');
-    },
-    fetch: function(options) {
-      fetchQueue.call(this, options || {}, Backbone.Model.prototype.fetch);
-    },
-    load: loadData
+    }
   });
 
   Thorax.Model.extend = function(protoProps, classProps) {
@@ -1362,13 +1328,12 @@
         collection._fetched = true;
         success && success(collection, response);
       };
-      fetchQueue.call(this, options || {}, Backbone.Collection.prototype.fetch);
+      return Backbone.Collection.prototype.fetch.apply(this, arguments);
     },
     reset: function(models, options) {
       this._fetched = !!models;
       return Backbone.Collection.prototype.reset.call(this, models, options);
-    },
-    load: loadData
+    }
   });
 
   Thorax.Collection.extend = function(protoProps, classProps) {
@@ -1379,60 +1344,4 @@
     return child;
   };
 
-  function loadData(callback, failback, options) {
-    if (this.isPopulated()) {
-      return callback(this);
-    }
-
-    if (arguments.length === 2 && typeof failback !== 'function' && _.isObject(failback)) {
-      options = failback;
-      failback = false;
-    }
-
-    this.fetch(_.defaults({
-      success: bindToRoute(callback, failback && _.bind(failback, this, false)),
-      error: failback && _.bind(failback, this, true)
-    }, options));
-  }
-
-  function fetchQueue(options, $super) {
-    if (options.resetQueue) {
-      // WARN: Should ensure that loaders are protected from out of band data
-      //    when using this option
-      this.fetchQueue = undefined;
-    }
-
-    if (!this.fetchQueue) {
-      // Kick off the request
-      this.fetchQueue = [options];
-      options = _.defaults({
-        success: flushQueue(this, this.fetchQueue, 'success'),
-        error: flushQueue(this, this.fetchQueue, 'error'),
-        complete: flushQueue(this, this.fetchQueue, 'complete')
-      }, options);
-      $super.call(this, options);
-    } else {
-      // Currently fetching. Queue and process once complete
-      this.fetchQueue.push(options);
-    }
-  }
-
-  function flushQueue(self, fetchQueue, handler) {
-    return function() {
-      var args = arguments;
-
-      // Flush the queue. Executes any callback handlers that
-      // may have been passed in the fetch options.
-      fetchQueue.forEach(function(options) {
-        if (options[handler]) {
-          options[handler].apply(this, args);
-        }
-      }, this);
-
-      // Reset the queue if we are still the active request
-      if (self.fetchQueue === fetchQueue) {
-        self.fetchQueue = undefined;
-      }
-    }
-  }
 }).call(this, this);
