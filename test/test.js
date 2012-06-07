@@ -2,12 +2,9 @@
 
 $(function() {
 
-  var Application = new Thorax.Application({
-    templatePathPrefix: ''
-  });
+  var Application = new Thorax.Application();
   Application.start();
-
-  Application.templates = {
+  _.extend(Application.templates, {
     'letter.handlebars': Handlebars.compile('{{collection tag="ul"}}'), 
     'letter-item.handlebars': Handlebars.compile("<li>{{letter}}</li>"),
     'letter-empty.handlebars': Handlebars.compile("<li>empty</li>"),
@@ -15,7 +12,7 @@ $(function() {
     'parent.handlebars': Handlebars.compile("<div>{{view child}}</div>"),
     'child.handlebars': Handlebars.compile("<div>{{value}}</div>"),
     'form.handlebars': Handlebars.compile('<form><input name="one"/><select name="two"><option value="a">a</option><option value="b">b</option></select><input name="three[four]"/></form>')
-  };
+  });
 
   var LetterModel = Application.Model.extend({});
 
@@ -713,18 +710,6 @@ $(function() {
     equal(bEventCounter.ready, 1);
     equal(bEventCounter.deactivated, 1);
     equal(bEventCounter.destroyed, 1);
-  });
-
-  test("multiple application objects can co-exist", function() {
-    var a = new Thorax.Application();
-    var b = new Thorax.Application;
-
-    a.View.extend({name: 'a'});
-    b.View.extend({name: 'b'});
-    ok(a.Views.a);
-    ok(!a.Views.b);
-    ok(b.Views.b);
-    ok(!b.Views.a);
   });
 
   test("nested layouts", function() {

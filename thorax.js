@@ -106,7 +106,7 @@
         if (typeof name === 'function') {
           name.call(this);
         } else {
-          var mixin = this.constructor.registry.Mixins[name];
+          var mixin = Thorax.registry.Mixins[name];
           _.extend(this, mixin[1]);
           //mixin callback may be an array of [callback, arguments]
           if (_.isArray(mixin[0])) {
@@ -128,10 +128,10 @@
       }
 
       if (typeof name === 'string') {
-        if (!this.constructor.registry.Views[name]) {
+        if (!Thorax.registry.Views[name]) {
           throw new Error('view: ' + name + ' does not exist.');
         }
-        instance = new this.constructor.registry.Views[name](options);
+        instance = new Thorax.registry.Views[name](options);
       } else {
         instance = name;
       }
@@ -149,7 +149,7 @@
     template: renderTemplate,
 
     loadTemplate: function(file, data, scope) {
-      var fileName = scope.templatePathPrefix + file + (file.match(handlebarsExtensionRegExp) ? '' : '.' + handlebarsExtension);
+      var fileName = Thorax.templatePathPrefix + file + (file.match(handlebarsExtensionRegExp) ? '' : '.' + handlebarsExtension);
       return scope.templates[fileName];
     },
   
@@ -396,7 +396,7 @@
         if (!emptyTemplate) {
           var name = getViewName.call(this, true);
           if (name) {
-            emptyTemplate = this.loadTemplate(name + '-empty', {}, this.constructor.registry);
+            emptyTemplate = this.loadTemplate(name + '-empty', {}, Thorax.registry);
           }
           if (!emptyTemplate) {
             return;
@@ -643,7 +643,7 @@
       Handlebars.registerHelper(name, this[name]);
     },
     registerMixin: function(name, callback, methods) {
-      this.registry.Mixins[name] = [callback, methods];
+      Thorax.registry.Mixins[name] = [callback, methods];
     },
     mixins: [],
     mixin: function(mixin) {
@@ -688,10 +688,7 @@
   View.extend = function(protoProps, classProps) {
     var child = Backbone.View.extend.call(this, protoProps, classProps);
     if (child.prototype.name) {
-      var registry = ((classProps && classProps.registry) || this.registry);
-      if (registry) {
-        registry.Views[child.prototype.name] = child;
-      }
+      Thorax.registry.Views[child.prototype.name] = child;
     }
     child.mixins = _.clone(this.mixins);
     cloneEvents(this, child, 'events');
@@ -924,7 +921,7 @@
     if (typeof file === 'function') {
       template = file;
     } else {
-      template = this.loadTemplate(file, data, this.constructor.registry);
+      template = this.loadTemplate(file, data, Thorax.registry);
     }
     if (!template) {
       if (ignoreErrors) {
@@ -1245,13 +1242,13 @@
 
   var Router = Backbone.Router.extend({
     view: function(name, attributes) {
-      if (!this.constructor.registry.Views[name]) {
+      if (!Thorax.registry.Views[name]) {
         throw new Error('view: ' + name + ' does not exist.');
       }
-      return new this.constructor.registry.Views[name](attributes);
+      return new Thorax.registry.Views[name](attributes);
     },
     setView: function() {
-      return this.constructor.registry.setView.apply(scope.layout, arguments);
+      return Thorax.registry.setView.apply(scope.layout, arguments);
     }
   });
 
@@ -1308,7 +1305,8 @@
     View: View,
     Model: Model,
     Collection: Collection,
-    Router: Router
+    Router: Router,
+    templatePathPrefix: ''
   };
 
   //if a "name" property is specified during extend set it on the registry
@@ -1322,40 +1320,34 @@
     Thorax[className].extend = function(protoProps, classProps) {
       var child = Backbone[className].extend.call(this, protoProps, classProps);
       if (child.prototype.name) {
-        var registry = (classProps && classProps.registry) || this.registry;
-        if (registry) {
-          registry[registryName][child.prototype.name] = child;
-        }
+        Thorax.registry[registryName][child.prototype.name] = child;
       }
       return child;
     };
   }
 
+  Thorax.registry = {
+    templates: {},
+    Views: {},
+    Mixins: {},
+    Models: {},
+    Collections: {},
+    Routers: {},
+  };
+
   Thorax.Application = Layout.extend({
     initialize: function(options) {
+      //DEPRECATION: backwards compatibility with < 1.3
+      _.extend(this, Thorax.registry);
+
       //ensure backbone history has started
       Backbone.history || (Backbone.history = new Backbone.History);
       _.extend(this, {
-        templatePathPrefix: (options && options.templatePathPrefix) || '',
-        templates: {},
-        Views: {},
-        Mixins: {},
-        Models: {},
-        Collections: {},
-        Routers: {},
         Layout: Layout.extend(),
-        View: View.extend({}, {
-          registry: this
-        }),
-        Model: Model.extend({}, {
-          registry: this
-        }),
-        Collection: Collection.extend({}, {
-          registry: this
-        }),
-        Router: Router.extend({}, {
-          registry: this
-        })
+        View: View.extend({}),
+        Model: Model.extend({}),
+        Collection: Collection.extend({}),
+        Router: Router.extend({})
       });
     },
     start: function(options) {
