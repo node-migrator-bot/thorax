@@ -756,12 +756,13 @@
     collection: {
       add: function(model, collection) {
         var collection_element = getCollectionElement.call(this, collection);
-        //if collection was empty, clear empty view
-        if (collection.length === 1 && collection_element.length) {
-          collection_element.empty();
-        }
-        if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
-          this.render();
+        if (collection.length === 1) {
+          if(collection_element.length) {
+            collection_element.empty();
+          }
+          if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
+            this.render();
+          }
         }
         if (collection_element.length) {
           this.appendItem(collection, model, collection.indexOf(model), {
@@ -779,11 +780,13 @@
             break;
           }
         }
-        if (collection.length === 0 && collection_element.length) {
-          appendEmpty.call(this, collection);
-        }
-        if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
-          this.render();
+        if (collection.length === 0) {
+          if (collection_element.length) {
+            appendEmpty.call(this, collection);
+          }
+          if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
+            this.render();
+          }
         }
       },
       reset: function(collection) {
