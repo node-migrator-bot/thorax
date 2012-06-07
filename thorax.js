@@ -1344,10 +1344,18 @@
       Backbone.history || (Backbone.history = new Backbone.History);
       _.extend(this, {
         Layout: Layout.extend(),
-        View: View.extend({}),
-        Model: Model.extend({}),
-        Collection: Collection.extend({}),
-        Router: Router.extend({})
+        View: View.extend({
+          application: this
+        }),
+        Model: Model.extend({
+          application: this
+        }),
+        Collection: Collection.extend({
+          application: this
+        }),
+        Router: Router.extend({
+          application: this
+        })
       });
     },
     start: function(options) {
