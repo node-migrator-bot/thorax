@@ -920,7 +920,7 @@
         } else {
           context[key] = value;
         }
-      });
+      }, this);
       return context;
     }
   }
