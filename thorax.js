@@ -882,7 +882,7 @@
 
   //private Thorax.View methods
   function getViewName(silent) {
-    var name = this.name || (this.model && this.model.name);
+    var name = this.name;
     if (!name && !silent) {
       throw new Error(this.cid + " requires a 'name' or 'template' attribute in order to be rendered.");
     } else if (name) {
