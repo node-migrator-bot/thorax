@@ -247,9 +247,7 @@
     
         if (this._shouldFetch(this.model, this._modelOptions)) {
           var success = this._modelOptions.success;
-          this.model.load(function(){
-              success && success(model);
-            }, this._modelOptions);
+          this._loadModel(this.model, this._modelOptions);
         } else {
           //want to trigger built in event handler (render() + populate())
           //without triggering event on model
@@ -258,6 +256,10 @@
       }
   
       return this;
+    },
+
+    _loadModel: function(model, options) {
+      model.fetch(options);
     },
 
     setModelOptions: function(options) {
@@ -300,10 +302,7 @@
         collection.trigger('set', collection, old_collection);
 
         if (this._shouldFetch(collection, options)) {
-          var success = options.success;
-          collection.load(function(){
-              success && success(collection);
-            }, options);
+          this._loadCollection(collection, options);
         } else {
           //want to trigger built in event handler (render())
           //without triggering event on collection
@@ -312,6 +311,10 @@
       }
   
       return this;
+    },
+
+    _loadCollection: function(collection, options) {
+      collection.fetch(options);
     },
 
     setCollectionOptions: function(collection, options) {
