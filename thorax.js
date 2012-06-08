@@ -372,13 +372,15 @@
       if (!collection) {
         collection = this.collection;
       }
-      var collection_options = this._collectionOptionsByCid[collection.cid],
-          context = this.itemContext(item, i);
+      var collection_options = this._collectionOptionsByCid[collection.cid];
       if (collection_options['item-view']) {
-        var view = this.view(collection_options['item-view'], context);
+        var view = this.view(collection_options['item-view'], {
+          model: item
+        });
         view.render(collection_options['item-template']);
         return view;
       } else {
+        var context = this.itemContext(item, i);
         return this.template(collection_options['item-template'] || getViewName.call(this) + '-item', context);
       }
     },
