@@ -63,6 +63,23 @@ $(function() {
     equal(c.el.firstChild.innerHTML, 'c', 'manual render');
   });
 
+  test("context may be an object", function() {
+    var model = new Application.Model({
+      a: 'a'
+    });
+    var view = new (Application.View.extend({
+      context: {
+        b: 'b',
+        c: function() {
+          return 'c'
+        }
+      },
+      template: '{{a}}{{b}}{{c}}'
+    }));
+    view.setModel(model);
+    equal(view.html(), 'abc');
+  });
+
   //DEPRECATION: supports syntax for < 1.3
   test("Collection View binding", function() {
     function runCollectionTests(view, indexMultiplier) {

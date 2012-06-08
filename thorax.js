@@ -336,9 +336,9 @@
 
     render: function(output) {
       if (typeof output === 'undefined' || (!_.isElement(output) && !_.isArray(output) && !(output && output.el) && typeof output !== 'string')) {
-        output = this.template(this._template || getViewName.call(this), this.context(this.model));
+        output = this.template(this._template || getViewName.call(this), getContext.call(this, this.model));
       } else if (typeof output === 'function') {
-        output = this.template(output, this.context(this.model));
+        output = this.template(output, getContext.call(this, this.model));
       }
       //accept a view, string, Handlebars.SafeString or DOM element
       this.html((output && output.el) || (output && output.string) || output);
@@ -585,7 +585,7 @@
       if (!this.$('form').length) {
         return;
       }
-      var value, attributes = attributes || this.context(this.model);
+      var value, attributes = attributes || getContext.call(this, this.model);
       
       //callback has context of element
       eachNamedInput.call(this, {}, function() {
@@ -906,6 +906,22 @@
       this.bindCollection(collection, options);
     } else if (options) {
       _.extend(this._collectionOptionsByCid[collection.cid], options);
+    }
+  }
+
+  function getContext(model) {
+    if (typeof this.context === 'function') {
+      return this.context(model);
+    } else {
+      var context = _.extend({}, (model && model.attributes) || {});
+      _.each(this.context, function(value, key) {
+        if (typeof value === 'function') {
+          context[key] = value.call(this);
+        } else {
+          context[key] = value;
+        }
+      });
+      return context;
     }
   }
 
