@@ -335,7 +335,7 @@
     },
 
     render: function(output) {
-      if (typeof output === 'undefined' || (!_.isElement(output) && !_.isArray(output) && !(output && output.el) && typeof output !== 'string')) {
+      if (typeof output === 'undefined' || (!_.isElement(output) && !is$(output) && !(output && output.el) && typeof output !== 'string')) {
         output = this.template(this._template || getViewName.call(this), getContext.call(this, this.model));
       } else if (typeof output === 'function') {
         output = this.template(output, getContext.call(this, this.model));
@@ -880,10 +880,16 @@
     return (Backbone.history._hasPushState ? Backbone.history.options.root : '#') + url;
   });
 
+  //'selector' is not present in $('<p></p>')
+  //TODO: investigage a better detection method
+  function is$(obj) {
+    return typeof obj === 'object' && ('length' in obj);
+  }
+
   //private Thorax.View methods
   function getViewName(silent) {
     var name = this.name;
-    if (!name && !silent) {
+    if ((!name && !silent)) {
       throw new Error(this.cid + " requires a 'name' or 'template' attribute in order to be rendered.");
     } else if (name) {
       return name;
