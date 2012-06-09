@@ -513,8 +513,8 @@
         }
       }
 
-      if (event) {
-        event.preventDefault();
+      if (event && !this._preventDuplicateSubmission(event)) {
+        return;
       }
 
       options = _.extend({
@@ -554,6 +554,27 @@
       callback && callback.call(this,attributes);
       return attributes;
     },
+
+    _preventDuplicateSubmission: function(event, callback) {
+      event.preventDefault();
+
+      var form = $(event.target);
+      if ((event.target.tagName || '').toLowerCase() !== 'form') {
+        // Handle non-submit events by gating on the form
+        form = $(event.target).closest('form');
+      }
+
+      if (!form.attr('data-submit-wait')) {
+        form.attr('data-submit-wait', 'true');
+        if (callback) {
+          callback.call(this, event);
+        }
+        return true;
+      } else {
+        return false;
+      }
+    },
+
   
     //populate a form from the passed attributes or this.model if present
     populate: function(attributes) {
