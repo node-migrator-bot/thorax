@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "node test/bin/server.js . 8083",
-    "test": "phantomjs test/bin/run-qunit.js 'http://localhost:8083/test/index.html'"
+    "test": "phantomjs test/bin/run-qunit.js 'http://localhost:8083/test/zepto.html' 'http://localhost:8083/test/jquery.html'"
   },
   "main": "./thorax.js"
 }
