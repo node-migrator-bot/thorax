@@ -495,7 +495,6 @@
     //as an object
     //pass {set:false} to not update this.model if present
     //can pass options, callback or event in any order
-    //if event is passed, _preventDuplicateSubmission is called
     serialize: function() {
       var callback, options, event;
       //ignore undefined arguments in case event was null
@@ -503,18 +502,10 @@
         if (typeof arguments[i] === 'function') {
           callback = arguments[i];
         } else if (typeof arguments[i] === 'object') {
-          if ('stopPropagation' in arguments[i] && 'preventDefault' in arguments[i]) {
-            event = arguments[i];
-          } else {
-            options = arguments[i];
-          }
+          options = arguments[i];
         }
       }
-
-      if (event && !this._preventDuplicateSubmission(event)) {
-        return;
-      }
-
+      
       options = _.extend({
         set: true,
         validate: true
@@ -553,26 +544,6 @@
       return attributes;
     },
   
-    _preventDuplicateSubmission: function(event, callback) {
-      event.preventDefault();
-
-      var form = $(event.target);
-      if ((event.target.tagName || '').toLowerCase() !== 'form') {
-        // Handle non-submit events by gating on the form
-        form = $(event.target).closest('form');
-      }
-
-      if (!form.attr('data-submit-wait')) {
-        form.attr('data-submit-wait', 'true');
-        if (callback) {
-          callback.call(this, event);
-        }
-        return true;
-      } else {
-        return false;
-      }
-    },
-
     //populate a form from the passed attributes or this.model if present
     populate: function(attributes) {
       if (!this.$('form').length) {
