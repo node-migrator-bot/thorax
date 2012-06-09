@@ -462,7 +462,7 @@ Thorax provides helpers to assist with form handling, but makes no user interfac
 
 ### serialize *view.serialize([event], callback [,options])*
 
-Serializes a form. `callback` will receive the attributes from the form and will only be called if `validateInput` returns nothing or an empty array. If an `event` is passed a check will be run to prevent duplicate submission. `options` may contain:
+Serializes a form. `callback` will receive the attributes from the form and will only be called if `validateInput` returns nothing or an empty array. If an `event` is passed a check will be run to prevent duplicate submission. If the form can be submitted multiple times before the view will be destroyed, call the `release` method which is passed as the second argument to the `callback`. `options` may contain:
 
 - `set` - defaults to true, wether or not to set the attributes if valid on a model if one was set with `setModel`
 - `validate - defaults to true, wether or not to call `validateInput` during serialization
@@ -477,13 +477,14 @@ Each form input in your application should contain a corresponding label. Since 
     Phoenix.View.extend({
       name: "address-form",
       events: {
-        "submit form": "_handleSubmit"
-      },
-      _handleSubmit: function(event) {
-        this.serialize(event, function(attributes) {
-          attributes["last-name"] === "Beastridge";
-          attributes.address.street === "123 Chestnut";
-        });
+        "submit form": function(event) {
+          this.serialize(event, function(attributes, release) {
+            attributes["last-name"] === "Beastridge";
+            attributes.address.street === "123 Chestnut";
+            //the event handler will not be called again
+            //until the release function is called 
+            release();
+          });
       }
     });
 

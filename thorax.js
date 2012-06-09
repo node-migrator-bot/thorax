@@ -1141,7 +1141,16 @@
   function getCollectionElement(collection) {
     //DEPRECATION: this._collectionSelector for backwards compatibility with < 1.3
     var selector = this._collectionSelector || '[' + collection_cid_attribute_name + '="' + collection.cid + '"]';
-    return this.$(selector);
+    var elements = this.$(selector);
+    if (elements.length > 1) {
+      //TODO: Zepto 1.0 should support jQuery style filter()
+      var cid = this.cid;
+      return $(_.filter(elements, function(element) {
+        return cid === $(element).closest('[' + view_name_attribute_name + ']').attr(view_name_attribute_name);
+      }));
+    } else {
+      return elements;
+    }
   }
 
   function preserveCollectionElements(callback) {

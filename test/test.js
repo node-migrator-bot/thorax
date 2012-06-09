@@ -233,6 +233,18 @@ $(function() {
     });
     view.render();
     equal(view.$('li').length, letterCollection.models.length * 2);
+
+    var SubViewWithSameCollection = Application.View.extend({
+      name: 'sub-view-with-same-collection',
+      template: '{{collection a tag="ul" item-template="letter-item"}}'
+    });
+    var view = new Application.View({
+      a: new Application.Collection(letterCollection.models),
+      b: new Application.Collection(letterCollection.models),
+      template: '{{collection a tag="ul" item-template="letter-item"}}{{view "sub-view-with-same-collection" a=a}}'
+    });
+    view.render();
+    equal(view.$('li').length, letterCollection.models.length * 2);
   });
 
   test("inverse block in collection helper", function() {
