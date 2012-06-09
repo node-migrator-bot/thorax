@@ -162,10 +162,10 @@
           //preserveCollectionElements calls the callback after it has a reference
           //to the collection element, calls the callback, then re-appends the element
           preserveCollectionElements.call(this, function() {
-            element = $(this.el).html(html);
+            element = this.$el.html(html);
           });
         } else {
-          element = $(this.el).html(html);
+          element = this.$el.html(html);
         }
         appendViews.call(this);
         return element;
@@ -211,9 +211,9 @@
       } else {
         var boundHandler = containHandlerToCurentView(bindEventHandler.call(this, params.handler), this.cid);
         if (params.selector) {
-          $(this.el).delegate(params.selector, params.name, boundHandler);
+          this.$el.delegate(params.selector, params.name, boundHandler);
         } else {
-          $(this.el).bind(params.name, boundHandler);
+          this.$el.bind(params.name, boundHandler);
         }
       }
     },
