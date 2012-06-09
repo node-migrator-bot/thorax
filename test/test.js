@@ -37,6 +37,26 @@ $(function() {
     ok(letterCollection.at(0).isPopulated());
   });
 
+  test("_shouldFetch", function() {
+    var options = {fetch: true};
+    var view = new Application.View();
+    var a = new (Application.Model.extend());
+    ok(!view._shouldFetch(a, options));
+
+    var b = new (Application.Model.extend({urlRoot: '/'}));
+    ok(!!view._shouldFetch(b, options));
+
+    var c = new (Application.Model.extend({urlRoot: '/'}));
+    c.set({key: 'value'});
+    ok(!view._shouldFetch(c, options));
+
+    var d = new (Application.Collection.extend());
+    ok(!view._shouldFetch(d, options));
+
+    var e = new (Application.Collection.extend({url: '/'}));
+    ok(!!view._shouldFetch(e, options));
+  });
+
   test("Model View binding", function() {
     var a = new LetterItemView({
       model: letterCollection.at(0)

@@ -212,8 +212,11 @@
     },
 
     _shouldFetch: function(model_or_collection, options) {
-      var url = (!model_or_collection.collection && getValue(model_or_collection, 'urlRoot')
-        || model_or_collection.collection && getValue(model_or_collection.collection, 'url'));
+      var url = (
+        (!model_or_collection.collection && getValue(model_or_collection, 'urlRoot')) ||
+        (model_or_collection.collection && getValue(model_or_collection.collection, 'url')) ||
+        (!model_or_collection.collection && model_or_collection._byCid && model_or_collection._byId && getValue(model_or_collection, 'url'))
+      );
       return url && options.fetch && (
         typeof model_or_collection.isPopulated === 'undefined' || !model_or_collection.isPopulated()
       );
