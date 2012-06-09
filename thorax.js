@@ -697,9 +697,6 @@
       if (options && options.model) {
         this.setModel(options.model);
       }
-      if (options && options.collection) {
-        this.setCollection(options.collection);
-      }
     },
 
     error: function() {  
