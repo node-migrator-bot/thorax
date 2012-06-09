@@ -1168,7 +1168,7 @@
     if (!self._views) {
       return;
     }
-    $('[' + view_placeholder_attribute_name + ']', scope || self.el).forEach(function(el) {
+    _.toArray($('[' + view_placeholder_attribute_name + ']', scope || self.el)).forEach(function(el) {
       var placeholder_id = el.getAttribute(view_placeholder_attribute_name),
           cid = placeholder_id.replace(/\-placeholder\d+$/, '');
           view = self._views[cid];
