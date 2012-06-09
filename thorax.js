@@ -502,10 +502,18 @@
         if (typeof arguments[i] === 'function') {
           callback = arguments[i];
         } else if (typeof arguments[i] === 'object') {
-          options = arguments[i];
+          if ('stopPropagation' in arguments[i] && 'preventDefault' in arguments[i]) {
+            event = arguments[i];
+          } else {
+            options = arguments[i];
+          }
         }
       }
-      
+
+      if (event) {
+        event.preventDefault();
+      }
+
       options = _.extend({
         set: true,
         validate: true
