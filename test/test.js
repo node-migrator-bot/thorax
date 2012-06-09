@@ -550,7 +550,7 @@ $(function() {
   });
     
   test("dom events and containHandlerToCurrentView", function() {
-    
+    this.clock.restore();
     var childClickedCount = 0,
         parentClickedCount = 0;
     
@@ -581,51 +581,19 @@ $(function() {
     parent.render();
     document.body.appendChild(parent.el);
   
-    $(parent.$('div')[0]).trigger('click');
-    equal(parentClickedCount, 1);
-    equal(childClickedCount, 0);
-    
-    parent.child.$('div').trigger('click');
-    equal(parentClickedCount, 1);
-    equal(childClickedCount, 1);
-  
-    $(parent.el).remove();
-
-    var ParentWithNested = Parent.extend({
-      events: {
-        'nested click div': function() {
-          ++parentClickedCount;
-        }
-      }
-    });
-    parent = new ParentWithNested();
-    parent.render();
-    document.body.appendChild(parent.el);
-    $(parent.el).trigger('click');
-    $(parent.child.el).trigger('click');
-    equal(parentClickedCount, 4, 'test nested keyword');
-    equal(childClickedCount, 2, 'test nested keyword');
-    $(parent.el).remove();
-
-    //test nested view events
-    var testTriggerCount = 0;
-    Parent = Application.View.extend({
-      events: {
-        'nested test': function() {
-          ++testTriggerCount;
-          equal(this.cid, parent.cid, 'scope is always the declaring view');
-        }
-      },
-      initialize: function() {
-        this.view(this.child = new Application.View());
-        this.child.view(this.child.child = new Application.View());
-      }
-    });
-    parent = new Parent();
-    parent.trigger('test');
-    parent.child.trigger('test');
-    parent.child.child.trigger('test');
-    equal(testTriggerCount, 3, 'test nested view events');
+    expect(4);
+    stop();
+    setTimeout(function() {
+      $(parent.$('div')[0]).trigger('click');
+      equal(parentClickedCount, 1);
+      equal(childClickedCount, 0);
+      
+      parent.child.$('div').trigger('click');
+      equal(parentClickedCount, 1);
+      equal(childClickedCount, 1);
+      $(parent.el).remove();
+      start();
+    }, 2);
   });
   
   test("serialize() / populate()", function() {

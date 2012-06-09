@@ -32,7 +32,6 @@
 
   //wrap Backbone.View constructor to support initialize event
   Backbone.View = function(options) {
-    this._childEvents = [];
     this.cid = _.uniqueId('view');
     this._boundCollectionsByCid = {};
     this._renderCount = 0;
@@ -136,13 +135,6 @@
         instance = name;
       }
       this._views[instance.cid] = instance;
-      this._childEvents.forEach(function(params) {
-        params = _.clone(params);
-        if (!params.parent) {
-          params.parent = this;
-        }
-        instance._addEvent(params);
-      }, this);
       return instance;
     },
     
@@ -199,19 +191,20 @@
     //- type "view" || "DOM"
     //- handler
     _addEvent: function(params) {
-      if (params.nested) {
-        this._childEvents.push(params);
-      }
       if (params.type === 'view') {
-        if (params.nested) {
-          this.bind(params.name, _.bind(params.handler, params.parent || this, this));
-        } else {
-          this.bind(params.name, params.handler, this);
-        }
+        this.bind(params.name, params.handler, this);
       } else {
         var boundHandler = containHandlerToCurentView(bindEventHandler.call(this, params.handler), this.cid);
         if (params.selector) {
-          this.$el.delegate(params.selector, params.name, boundHandler);
+          //TODO: determine why collection views and some nested views
+          //need defered event delegation 
+          if (typeof jQuery !== 'undefined' && $ === jQuery) {
+            _.defer(_.bind(function() {
+              this.$el.delegate(params.selector, params.name, boundHandler);
+            }, this));
+          } else {
+            this.$el.delegate(params.selector, params.name, boundHandler);
+          }
         } else {
           this.$el.bind(params.name, boundHandler);
         }
@@ -1044,7 +1037,7 @@
     }
   }
 
-  var eventSplitter = /^(nested\s+)?(\S+)(?:\s+(.+))?/;
+  var eventSplitter = /^(\S+)(?:\s+(.+))?/;
 
   function eventParamsFromEventItem(name, handler) {
     var params = {
@@ -1052,12 +1045,11 @@
       handler: typeof handler === 'string' ? this[handler] : handler
     };
     var match = eventSplitter.exec(name);
-    params.nested = !!match[1];
-    params.name = match[2];
+    params.name = match[1];
     if (isDOMEvent(params.name)) {
       params.type = 'DOM';
       params.name += '.delegateEvents' + this.cid;
-      params.selector = match[3];
+      params.selector = match[2];
     } else {
       params.type = 'view';
     }
