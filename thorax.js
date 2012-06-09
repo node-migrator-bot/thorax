@@ -551,7 +551,7 @@
         };
       }
       
-      callback && callback.call(this,attributes);
+      callback && callback.call(this, attributes, _.bind(resetSubmitState, this));
       return attributes;
     },
 
