@@ -22,6 +22,7 @@
       layout_cid_attribute_name = 'data-layout-cid',
       view_name_attribute_name = 'data-view-name',
       view_cid_attribute_name = 'data-view-cid',
+      call_method_attribute_name = 'data-call-method',
       view_placeholder_attribute_name = 'data-view-tmp',
       model_cid_attribute_name = 'data-model-cid',
       collection_cid_attribute_name = 'data-collection-cid',
@@ -605,7 +606,7 @@
     //perform form validation, implemented by child class
     validateInput: function() {},
   
-    destroy: function(){
+    destroy: function() {
       this.freeze();
       this.trigger('destroyed');
       if (this.undelegateEvents) {
@@ -708,7 +709,7 @@
     });
   }
 
-  View.registerEvents({
+  var internalEvents = {
     //built in dom events
     'submit form': function(event) {
       // Hide any virtual keyboards that may be lingering around
@@ -793,7 +794,13 @@
         }
       }
     }
-  });
+  };
+  internalEvents['click [' + call_method_attribute_name + ']'] = function(event) {
+    var target = $(event.target);
+    event.preventDefault();
+    this[target.attr('call_method_attribute_name')].call(this, event);
+  };
+  View.registerEvents(internalEvents);
   
   var viewTemplateOverrides = {};
   View.registerHelper('view', function(view, options) {
@@ -834,7 +841,7 @@
         delete collectionHelperOptions[key];
       });
       collectionHelperOptions[collection_cid_attribute_name] = collection.cid;
-      return new Handlebars.SafeString(tag(collectionHelperOptions));
+      return new Handlebars.SafeString(tag.call(this, collectionHelperOptions));
     } else {
       return '';
     }
@@ -862,7 +869,7 @@
     }
   });
 
-  View.registerHelper('link', function(url) {
+  View.registerHelper('url', function(url) {
     return (Backbone.history._hasPushState ? Backbone.history.options.root : '#') + url;
   });
 
@@ -873,6 +880,10 @@
       delete htmlAttributes.tag;
     }
     if (htmlAttributes.tagName) {
+      delete htmlAttributes.tagName;
+    }
+    if (htmlAttributes.call) {
+      htmlAttributes[call_method_attribute_name] = htmlAttributes.call;
       delete htmlAttributes.tagName;
     }
     return '<' + tag + ' ' + _.map(htmlAttributes, function(value, key) {
@@ -1368,7 +1379,7 @@
     Mixins: {},
     Models: {},
     Collections: {},
-    Routers: {},
+    Routers: {}
   };
 
   Thorax.Application = Layout.extend({
