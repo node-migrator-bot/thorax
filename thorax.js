@@ -829,19 +829,12 @@
         'empty-view': options.hash['empty-view']
       };
       ensureCollectionIsBound.call(this._view, collection, collectionOptionsToExtend);
-      var collectionHelperOptions = _.clone(options.hash),
-          tag = (collectionHelperOptions.tag || collectionHelperOptions.tagName || 'div');
+      var collectionHelperOptions = _.clone(options.hash);
       _.keys(collectionOptionsToExtend).forEach(function(key) {
         delete collectionHelperOptions[key];
       });
       collectionHelperOptions[collection_cid_attribute_name] = collection.cid;
-      if (collectionHelperOptions.tag) {
-        delete collectionHelperOptions.tag;
-      }
-      var htmlAttributes = _.map(collectionHelperOptions, function(value, key) {
-        return key + '="' + value + '"';
-      }).join(' ');
-      return new Handlebars.SafeString('<' + tag + ' ' + htmlAttributes + '></' + tag + '>');
+      return new Handlebars.SafeString(tag(collectionHelperOptions));
     } else {
       return '';
     }
@@ -872,6 +865,20 @@
   View.registerHelper('link', function(url) {
     return (Backbone.history._hasPushState ? Backbone.history.options.root : '#') + url;
   });
+
+  function tag(attributes, content) {
+    var htmlAttributes = _.clone(attributes),
+        tag = htmlAttributes.tag || htmlAttributes.tagName || 'div';
+    if (htmlAttributes.tag) {
+      delete htmlAttributes.tag;
+    }
+    if (htmlAttributes.tagName) {
+      delete htmlAttributes.tagName;
+    }
+    return '<' + tag + ' ' + _.map(htmlAttributes, function(value, key) {
+      return key + '="' + value + '"';
+    }).join(' ') + '>' + (content || '') + '</' + tag + '>';
+  }
 
   //'selector' is not present in $('<p></p>')
   //TODO: investigage a better detection method
