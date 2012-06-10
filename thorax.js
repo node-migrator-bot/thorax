@@ -686,19 +686,6 @@
     }
   });
 
-  //events and mixins properties need act as inheritable, not static / shared
-  View.extend = function(protoProps, classProps) {
-    var child = Backbone.View.extend.call(this, protoProps, classProps);
-    if (child.prototype.name) {
-      Thorax.registry.Views[child.prototype.name] = child;
-    }
-    child.mixins = _.clone(this.mixins);
-    cloneEvents(this, child, 'events');
-    cloneEvents(this.events, child.events, 'model');
-    cloneEvents(this.events, child.events, 'collection');
-    return child;
-  };
-
   function cloneEvents(source, target, key) {
     source[key] = _.clone(target[key]);
     //need to deep clone events array
@@ -1357,21 +1344,29 @@
   };
 
   //if a "name" property is specified during extend set it on the registry
-  var registryNamesByClassName = {
+  //views need special property inheritence
+  //routers will be treated as initialized singletons
+  _.each({
     Model: 'Models',
     Collection: 'Collections',
+    View: 'Views',
     Router: 'Routers'
-  };
-  for (var className in registryNamesByClassName) {
-    var registryName = registryNamesByClassName[className];
+  }, function(registryName, className) {
     Thorax[className].extend = function(protoProps, classProps) {
       var child = Backbone[className].extend.call(this, protoProps, classProps);
       if (child.prototype.name) {
-        Thorax.registry[registryName][child.prototype.name] = child;
+        Thorax.registry[registryName][child.prototype.name] = className === 'Router' ? new child : child;
+      }
+      if (className === 'View') {
+        child.mixins = _.clone(this.mixins);
+        cloneEvents(this, child, 'events');
+        cloneEvents(this.events, child.events, 'model');
+        cloneEvents(this.events, child.events, 'collection');
       }
       return child;
     };
-  }
+  });
+
 
   Thorax.registry = {
     templates: {},
@@ -1406,7 +1401,7 @@
           application: this
         })
       });
-      
+
       _.extend(this, options || {});
     },
     start: function(options) {
