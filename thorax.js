@@ -1406,6 +1406,8 @@
           application: this
         })
       });
+      
+      _.extend(this, options || {});
     },
     start: function(options) {
       if (!Backbone.History.started) {
