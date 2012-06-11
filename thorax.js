@@ -28,6 +28,7 @@
       model_name_attribute_name = 'data-model-name',
       collection_cid_attribute_name = 'data-collection-cid',
       collection_name_attribute_name = 'data-collection-name',
+      collection_empty_attribute_name = 'data-collection-empty'
       old_backbone_view = Backbone.View,
       //android scrollTo(0, 0) shows url bar, scrollTo(0, 1) hides it
       minimumScrollYOffset = (navigator.userAgent.toLowerCase().indexOf("android") > -1) ? 1 : 0,
@@ -352,8 +353,10 @@
       this.render();
       var collection_element = getCollectionElement.call(this, collection).empty();
       if (collection.isEmpty()) {
+        collection_element.attr(collection_empty_attribute_name, true);
         appendEmpty.call(this, collection);
       } else {
+        collection_element.removeAttr(collection_empty_attribute_name);
         collection.forEach(function(item, i) {
           this.appendItem(collection, item, i, {
             collectionElement: collection_element
@@ -454,6 +457,13 @@
 
         if (item_view.cid) {
           this._views[item_view.cid] = item_view;
+        }
+
+        //if the renderer's output wasn't contained in a tag, wrap it in a div
+        //plain text, or a mixture of top level text nodes and element nodes
+        //will get wrapped
+        if (typeof item_view === 'string' && !item_view.match(/^\s?\</m)) {
+          item_view = '<div>' + item_view + '</div>'
         }
 
         var item_element = item_view.el ? [item_view.el] : _.filter($(item_view), function(node) {
@@ -741,6 +751,8 @@
         var collection_element = getCollectionElement.call(this, collection);
         if (collection.length === 1) {
           if(collection_element.length) {
+            //note that this is $.empty() and not renderEmpty or other collection functionality
+            collection_element.removeAttr(collection_empty_attribute_name);
             collection_element.empty();
           }
           if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
@@ -765,6 +777,7 @@
         }
         if (collection.length === 0) {
           if (collection_element.length) {
+            collection_element.attr(collection_empty_attribute_name, true);
             appendEmpty.call(this, collection);
           }
           if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {

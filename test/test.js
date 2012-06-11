@@ -324,6 +324,19 @@ $(function() {
     ok(true);
   });
 
+  test("item-template and empty-template can return text nodes", function() {
+    var view = new Application.View({
+      letters: new Application.Collection(),
+      template: '{{#collection letters}}{{letter}}{{else}}empty{{/collection}}'
+    });
+    view.render();
+    equal(view.$('div div div').html(), 'empty');
+    ok(view.$('[data-collection-empty]').length);
+    view.letters.reset(letterCollection.models);
+    equal(view.$('div div div').html(), 'a');
+    ok(!view.$('[data-collection-empty]').length);
+  });
+
   test("empty helper", function() {
     var emptyView = new Application.View({
       template: '{{#empty}}empty{{else}}not empty{{/empty}}'
