@@ -401,6 +401,18 @@ $(function() {
     equal(parentRenderedCount, 4);
     equal(childRenderedCount, 3);
   });
+
+  test("Pass a function or view class to view()", function() {
+    var Child = Application.View.extend({
+      isChild: true
+    });
+    var parent = new Application.View();
+    ok(parent.view(Child).isChild);
+    equal(parent.view(Child, {key: 'value'}).key, 'value');
+    equal(parent.view(function() {
+      return new Child({key: 'value'});
+    }).key, 'value');
+  });
   
   test("Template not found handling", function() {
     var view = new Application.View();

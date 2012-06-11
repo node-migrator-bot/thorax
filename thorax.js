@@ -123,22 +123,13 @@
     },
   
     view: function(name, options) {
-      var instance;
       if (typeof name === 'object' && name.hash && name.hash.name) {
         // named parameters
         options = name.hash;
         name = name.hash.name;
         delete options.name;
       }
-
-      if (typeof name === 'string') {
-        if (!Thorax.registry.Views[name]) {
-          throw new Error('view: ' + name + ' does not exist.');
-        }
-        instance = new Thorax.registry.Views[name](options);
-      } else {
-        instance = name;
-      }
+      var instance = getView(name, options);
       this._views[instance.cid] = instance;
       return instance;
     },
@@ -897,6 +888,19 @@
   }
 
   //private Thorax.View methods
+  function getView(name, attributes) {
+    if (typeof name === 'string') {
+      if (!Thorax.registry.Views[name]) {
+        throw new Error('view: ' + name + ' does not exist.');
+      }
+      return new Thorax.registry.Views[name](attributes);
+    } else if (typeof name === 'function') {
+      return new name(attributes);
+    } else {
+      return name;
+    }
+  }
+
   function getViewName(silent) {
     var name = this.name;
     if ((!name && !silent)) {
@@ -1287,12 +1291,7 @@
   });
 
   var Router = Backbone.Router.extend({
-    view: function(name, attributes) {
-      if (!Thorax.registry.Views[name]) {
-        throw new Error('view: ' + name + ' does not exist.');
-      }
-      return new Thorax.registry.Views[name](attributes);
-    },
+    view: getView,
     setView: function() {
       return Thorax.registry.setView.apply(scope.layout, arguments);
     }
