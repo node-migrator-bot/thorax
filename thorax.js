@@ -25,7 +25,9 @@
       call_method_attribute_name = 'data-call-method',
       view_placeholder_attribute_name = 'data-view-tmp',
       model_cid_attribute_name = 'data-model-cid',
+      model_name_attribute_name = 'data-model-name',
       collection_cid_attribute_name = 'data-collection-cid',
+      collection_name_attribute_name = 'data-collection-name',
       old_backbone_view = Backbone.View,
       //android scrollTo(0, 0) shows url bar, scrollTo(0, 1) hides it
       minimumScrollYOffset = (navigator.userAgent.toLowerCase().indexOf("android") > -1) ? 1 : 0,
@@ -224,8 +226,12 @@
     },
   
     setModel: function(model, options) {
-      (this.el[0] || this.el).setAttribute(model_cid_attribute_name, model.cid);
-  
+      var el = (this.el[0] || this.el);
+      el.setAttribute(model_cid_attribute_name, model.cid);
+      if (model.name) {
+        el.setAttribute(model_name_attribute_name, model.name);
+      }
+
       var old_model = this.model;
 
       if (old_model) {
@@ -828,6 +834,9 @@
         delete collectionHelperOptions[key];
       });
       collectionHelperOptions[collection_cid_attribute_name] = collection.cid;
+      if (collection.name) {
+        collectionHelperOptions[collection_name_attribute_name] = collection.name;
+      }
       return new Handlebars.SafeString(tag.call(this, collectionHelperOptions));
     } else {
       return '';
