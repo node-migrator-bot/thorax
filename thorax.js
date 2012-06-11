@@ -1240,7 +1240,7 @@
     events: {
       'click a': 'anchorClick'
     },
-
+    destroyViews: true,
     _ensureElement : function() {
       Backbone.View.prototype._ensureElement.call(this);
       (this.el[0] || this.el).setAttribute(layout_cid_attribute_name, this.cid);      
@@ -1262,7 +1262,7 @@
       view && (this.el[0] || this.el).appendChild(view.el);
       window.scrollTo(0, minimumScrollYOffset);
       this.view = view;
-      old_view && old_view.destroy();
+      this.destroyViews && old_view && old_view.destroy();
       this.view && this.view.trigger('ready');
       this.trigger('change:view:end', view, old_view);
       return view;
