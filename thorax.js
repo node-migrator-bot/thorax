@@ -34,8 +34,10 @@
       ELEMENT_NODE_TYPE = 1;
 
   //wrap Backbone.View constructor to support initialize event
+  var _viewsIndexedByCid = {};
   Backbone.View = function(options) {
     this.cid = _.uniqueId('view');
+    _viewsIndexedByCid[this.cid] = this;
     this._boundCollectionsByCid = {};
     this._renderCount = 0;
     this._configure(options || {});
@@ -624,6 +626,7 @@
       this.el = null;
       this.collection = null;
       this.model = null;
+      delete _viewsIndexedByCid[this.cid];
       destroyChildViews.call(this);
     },
 
@@ -1418,6 +1421,42 @@
         Backbone.history.start(options);
       }
       this.trigger('ready', options);
+    }
+  });
+
+  //jquery and zepto plugins
+  _.extend($.fn, {
+    view: function() {
+      var el = $(this).closest('[' + view_name_attribute_name + ']');
+      return (el && _viewsIndexedByCid[el.attr(view_name_attribute_name)]) || false;
+    },
+    model: function() {
+      var $this = $(this),
+          modelElement = $this.closest('[' + model_cid_attribute_name + ']'),
+          modelCid = modelElement && modelElement.attr(model_cid_attribute_name);
+      if (modelCid) {
+        var view = $this.view();
+        if (view && view.model && view.model.cid === modelCid) {
+          return view.model || false;
+        }
+        var collection = $this.collection(view);
+        if (collection) {
+          return collection._byCid[modelCid] || false;
+        }
+      }
+      return false;
+    },
+    collection: function(view) {
+      var $this = $(this),
+          collectionElement = $this.closest('[' + collection_cid_attribute_name + ']'),
+          collectionCid = collectionElement && collectionElement.attr(collection_cid_attribute_name);
+      if (collectionCid) {
+        view = view || $this.view();
+        if (view) {
+          return view._boundCollectionsByCid[collectionCid];
+        }
+      }
+      return false;
     }
   });
 

@@ -770,4 +770,28 @@ $(function() {
     document.body.removeChild(application.el);
   });
 
+  test("$.fn.view, $.fn.model, $.fn.collection", function() {
+    var child = new Application.View({
+      template: '{{#collection letters tag="ul"}}<li>{{letter}}</li>{{/collection}}',
+      letters: letterCollection
+    });
+    child.render();
+    equal(child.$('li:first-child').view(), child);
+    equal(child.$('ul').collection(), letterCollection);
+    equal(child.$('ul').model(), false);
+    equal(child.$el.collection(), false);
+    equal(child.$('li:first-child').collection(), letterCollection);
+    equal(child.$('li:first-child').model(), letterCollection.models[0]);
+
+    var parent = new Application.View({
+      model: new Application.Model(),
+      template: '{{view child}}',
+      child: child
+    });
+    parent.render();
+    equal(child.$('ul').model(), false);
+    equal($('ul', child.el).model(), false);
+    equal(parent.$el.model(), parent.model);
+  });
+
 });
