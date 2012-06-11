@@ -351,7 +351,7 @@ $(function() {
     equal(emptyCollectionView.html(), 'empty');
   });
 
-  test("Child views", function() {
+  test("child views", function() {
     var childRenderedCount = 0,
         parentRenderedCount = 0;
     var Child = Application.View.extend({
@@ -423,7 +423,18 @@ $(function() {
     equal(child.$('li').html(), 'a');
   });
   
-  test("Template not found handling", function() {
+  test("local view functions are called in template scope", function() {
+    var child = new Application.View({
+      template: '{{key "value"}}',
+      key: function(value) {
+        return value;
+      }
+    });
+    child.render();
+    equal('value', child.html());
+  });
+
+  test("template not found handling", function() {
     var view = new Application.View();
     equal('', view.template('foo', {}, true));
     raises(function() {
@@ -568,7 +579,7 @@ $(function() {
     equal(ChildTwo.events.a.length, 1, 'ensure events are not shared between children');
   });
 
-  test("Multiple event registration", function() {
+  test("multiple event registration", function() {
     var view = new Application.View(), a = 0, b = 0, c = 0, d = 0, e = 0;
     view.registerEvents({
       'a,b': function() {
