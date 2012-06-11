@@ -791,7 +791,7 @@
   internalEvents['click [' + call_method_attribute_name + ']'] = function(event) {
     var target = $(event.target);
     event.preventDefault();
-    this[target.attr('call_method_attribute_name')].call(this, event);
+    this[target.attr(call_method_attribute_name)].call(this, event);
   };
   View.registerEvents(internalEvents);
   
