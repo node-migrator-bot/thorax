@@ -946,13 +946,7 @@
   }
 
   function getTemplateContext(data) {
-    var view_context = {};
-    for (var key in this) {
-      if (typeof this[key] !== 'function') {
-        view_context[key] = this[key];
-      }
-    }
-    return _.extend({}, view_context, data || {}, {
+    return _.extend({}, this, data || {}, {
       cid: _.uniqueId('t'),
       _view: this
     });

@@ -413,6 +413,15 @@ $(function() {
       return new Child({key: 'value'});
     }).key, 'value');
   });
+
+  test("helper and local scope collision", function() {
+    var child = new Application.View({
+      collection: letterCollection,
+      template: '{{#collection this.collection tag="ul"}}<li>{{letter}}</li>{{/collection}}'
+    });
+    child.render();
+    equal(child.$('li').html(), 'a');
+  });
   
   test("Template not found handling", function() {
     var view = new Application.View();
