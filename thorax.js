@@ -1301,9 +1301,9 @@
 
   var Router = Backbone.Router.extend({
     view: getView,
-    setView: function() {
-      return Thorax.registry.setView.apply(scope.layout, arguments);
-    }
+    route: function(route, callback) {
+      Backbone.Router.prototype.route.call(this, (this.application.routePrefix || '') + route, callback);
+    },
   });
 
   var Model = Backbone.Model.extend({
@@ -1386,7 +1386,6 @@
       return child;
     };
   });
-
 
   Thorax.registry = {
     templates: {},
