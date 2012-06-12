@@ -57,7 +57,7 @@ $(function() {
     ok(!!view._shouldFetch(e, options));
   });
 
-  test("Model View binding", function() {
+  test("model view binding", function() {
     var a = new LetterItemView({
       model: letterCollection.at(0)
     });
@@ -101,7 +101,7 @@ $(function() {
   });
 
   //DEPRECATION: supports syntax for < 1.3
-  test("Collection View binding", function() {
+  test("collection view binding", function() {
     function runCollectionTests(view, indexMultiplier) {
       function matchCids(collection) {
         collection.forEach(function(model) {
@@ -434,6 +434,31 @@ $(function() {
     });
     child.render();
     equal(child.$('li').html(), 'a');
+  });
+
+  test("template function can be specified", function() {
+    var childReturningString = new Application.View({
+      template: function(data) {
+        ok(data.cid && data.cid.match(/^t/));
+        return 'template';
+      }
+    });
+    childReturningString.render();
+    equal(childReturningString.html(), 'template');
+    var childReturningElement = new Application.View({
+      template: function(data) {
+        return $('<p>template</p>')[0];
+      }
+    });
+    childReturningElement.render();
+    equal(childReturningElement.$('p').html(), 'template');
+    var childReturning$ = new Application.View({
+      template: function(data) {
+        return $('<p>template</p>');
+      }
+    });
+    childReturning$.render();
+    equal(childReturning$.$('p').html(), 'template');
   });
   
   test("local view functions are called in template scope", function() {

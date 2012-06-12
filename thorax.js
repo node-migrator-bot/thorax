@@ -58,9 +58,11 @@
       //properties directly with the view and template context
       _.extend(this, options || {});
 
-      //compile a string template if it is set as this.template
-      if (typeof this.template === 'string') {
-        this._template = Handlebars.compile(this.template);
+      //compile a string or assign a function template if it is set as this.template
+      if (this.template !== renderTemplate) {
+        this._template = typeof this.template === 'string'
+          ? Handlebars.compile(this.template)
+          : this.template;
         this.template = renderTemplate;
       }
       
