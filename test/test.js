@@ -330,10 +330,10 @@ $(function() {
       template: '{{#collection letters}}{{letter}}{{else}}empty{{/collection}}'
     });
     view.render();
-    equal(view.$('div div div').html(), 'empty');
+    equal(view.$('div[data-collection-cid] div').html(), 'empty');
     ok(view.$('[data-collection-empty]').length);
     view.letters.reset(letterCollection.models);
-    equal(view.$('div div div').html(), 'a');
+    equal(view.$('div[data-collection-cid] div').html(), 'a');
     ok(!view.$('[data-collection-empty]').length);
   });
 
