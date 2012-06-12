@@ -464,7 +464,7 @@
         //if the renderer's output wasn't contained in a tag, wrap it in a div
         //plain text, or a mixture of top level text nodes and element nodes
         //will get wrapped
-        if (typeof item_view === 'string' && !item_view.match(/^\s?\</m)) {
+        if (typeof item_view === 'string' && !item_view.match(/^\s*\</m)) {
           item_view = '<div>' + item_view + '</div>'
         }
 
