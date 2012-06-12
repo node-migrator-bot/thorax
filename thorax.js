@@ -1300,10 +1300,7 @@
   });
 
   var Router = Backbone.Router.extend({
-    view: getView,
-    route: function(route, callback) {
-      Backbone.Router.prototype.route.call(this, (this.application.routePrefix || '') + route, callback);
-    },
+    view: getView
   });
 
   var Model = Backbone.Model.extend({
