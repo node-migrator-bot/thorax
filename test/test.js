@@ -256,6 +256,29 @@ $(function() {
     equal(emptyCollectionView.$('[data-collection-cid]').html(), '<div>empty</div>');
   });
 
+  test("empty and collection helpers in the same template", function() {
+    var a = new Application.View({
+      template: '{{#empty letters}}<div class="empty">empty</div>{{/empty}}{{#collection letters}}{{letter}}{{/collection}}',
+      letters: new Application.Collection()
+    });
+    var b = new Application.View({
+      template: '{{#empty letters}}<div class="empty">empty a</div>{{/empty}}{{#collection letters}}{{letter}}{{else}}empty b{{/collection}}',
+      letters: new Application.Collection()
+    });
+    a.render();
+    equal(a.$('.empty').html(), 'empty');
+    a.letters.reset(letterCollection.models);
+    equal(a.$('.empty').length, 0);
+    equal(a.$('[data-collection-cid] div')[0].innerHTML, 'a');
+
+    b.render();
+    equal(b.$('.empty').html(), 'empty a');
+    equal(b.$('[data-collection-cid] div')[0].innerHTML, 'empty b');
+    b.letters.reset(letterCollection.models);
+    equal(b.$('.empty').length, 0);
+    equal(b.$('[data-collection-cid] div')[0].innerHTML, 'a');
+  });
+
   test("nested collection helper", function() {
     var blogModel = new Application.Model();
     Application.View.extend({
