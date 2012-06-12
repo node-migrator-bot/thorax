@@ -709,13 +709,6 @@
   }
 
   var internalEvents = {
-    //built in dom events
-    'submit form': function(event) {
-      // Hide any virtual keyboards that may be lingering around
-      var focused = $(':focus')[0];
-      focused && focused.blur();
-    },
-
     'initialize:after': function(options) {
       //bind model or collection if passed to constructor
       if (options && options.model) {
