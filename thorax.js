@@ -361,7 +361,11 @@
         var collectionOptions = this._collectionOptionsByCid[collection.cid];
         collection_element.removeAttr(collection_empty_attribute_name);
         collection.forEach(function(item, i) {
-          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, item, i)) {
+          if (!collectionOptions.filter || collectionOptions.filter &&
+            (typeof collectionOptions.filter === 'string'
+                ? this[collectionOptions.filter]
+                : collectionOptions.filter).call(this, item, i)
+            ) {
             this.appendItem(collection, item, i, {
               collectionElement: collection_element
             });
@@ -760,7 +764,11 @@
         }
         if (collection_element.length) {
           var index = collection.indexOf(model);
-          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, model, index)) {
+          if (!collectionOptions.filter || collectionOptions.filter &&
+            (typeof collectionOptions.filter === 'string'
+                ? this[collectionOptions.filter]
+                : collectionOptions.filter).call(this, model, index)
+            ) {
             this.appendItem(collection, model, index, {
               collectionElement: collection_element
             });
