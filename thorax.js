@@ -361,7 +361,7 @@
         var collectionOptions = this._collectionOptionsByCid[collection.cid];
         collection_element.removeAttr(collection_empty_attribute_name);
         collection.forEach(function(item, i) {
-          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, item)) {
+          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, item, i)) {
             this.appendItem(collection, item, i, {
               collectionElement: collection_element
             });
@@ -759,8 +759,9 @@
           }
         }
         if (collection_element.length) {
-          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, model)) {
-            this.appendItem(collection, model, collection.indexOf(model), {
+          var index = collection.indexOf(model);
+          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, model, index)) {
+            this.appendItem(collection, model, index, {
               collectionElement: collection_element
             });
           }
