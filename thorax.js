@@ -358,11 +358,14 @@
         collection_element.attr(collection_empty_attribute_name, true);
         appendEmpty.call(this, collection);
       } else {
+        var collectionOptions = this._collectionOptionsByCid[collection.cid];
         collection_element.removeAttr(collection_empty_attribute_name);
         collection.forEach(function(item, i) {
-          this.appendItem(collection, item, i, {
-            collectionElement: collection_element
-          });
+          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, item)) {
+            this.appendItem(collection, item, i, {
+              collectionElement: collection_element
+            });
+          }
         }, this);
       }
       this.trigger('rendered:collection', collection_element, collection);
@@ -743,21 +746,24 @@
     },
     collection: {
       add: function(model, collection) {
-        var collection_element = getCollectionElement.call(this, collection);
+        var collection_element = getCollectionElement.call(this, collection),
+            collectionOptions = this._collectionOptionsByCid[collection.cid];
         if (collection.length === 1) {
           if(collection_element.length) {
             //note that this is $.empty() and not renderEmpty or other collection functionality
             collection_element.removeAttr(collection_empty_attribute_name);
             collection_element.empty();
           }
-          if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
+          if (collectionOptions.renderOnEmptyStateChange) {
             this.render();
           }
         }
         if (collection_element.length) {
-          this.appendItem(collection, model, collection.indexOf(model), {
-            collectionElement: collection_element
-          });
+          if (!collectionOptions.filter || collectionOptions.filter && this[collectionOptions.filter].call(this, model)) {
+            this.appendItem(collection, model, collection.indexOf(model), {
+              collectionElement: collection_element
+            });
+          }
         }
       },
       remove: function(model, collection) {
@@ -828,7 +834,8 @@
         'item-template': options.fn && options.fn !== Handlebars.VM.noop ? options.fn : options.hash['item-template'],
         'empty-template': options.inverse && options.inverse !== Handlebars.VM.noop ? options.inverse : options.hash['empty-template'],
         'item-view': options.hash['item-view'],
-        'empty-view': options.hash['empty-view']
+        'empty-view': options.hash['empty-view'],
+        filter: options.hash['filter']
       };
       ensureCollectionIsBound.call(this._view, collection, collectionOptionsToExtend);
       var collectionHelperOptions = _.clone(options.hash);

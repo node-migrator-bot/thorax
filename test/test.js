@@ -297,6 +297,27 @@ $(function() {
   //  equal(view.$('[data-collection-cid] div')[0].innerHTML, 'value');
   //});
 
+  test("filter what items are rendered in a collection", function() {
+    var view = new Application.View({
+      template: '{{#collection filter="filterCollection" tag="ul"}}<li>{{key}}</li>{{/collection}}',
+      collection: new Application.Collection(),
+      filterCollection: function(model) {
+        return model.attributes.key === 'a' || model.attributes.key === 'b';
+      }
+    });
+    view.render();
+    equal(view.$('li').length, 0);
+    view.collection.reset([new Application.Model({key: 'a'})]);
+    equal(view.$('li').length, 1);
+    equal(view.$('li')[0].innerHTML, 'a');
+    view.collection.add(new Application.Model({key: 'b'}));
+    equal(view.$('li').length, 2);
+    equal(view.$('li')[1].innerHTML, 'b');
+    view.collection.add(new Application.Model({key: 'c'}));
+    equal(view.$('li').length, 2);
+    equal(view.$('li')[1].innerHTML, 'b');
+  });
+
   test("nested collection helper", function() {
     var blogModel = new Application.Model();
     Application.View.extend({
