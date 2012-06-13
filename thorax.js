@@ -34,9 +34,10 @@
       minimumScrollYOffset = (navigator.userAgent.toLowerCase().indexOf("android") > -1) ? 1 : 0,
       ELEMENT_NODE_TYPE = 1;
 
-  //wrap Backbone.View constructor to support initialize event
+  //Backbone.View constructor doesn't provide everything we need
+  //so create a new one
   var _viewsIndexedByCid = {};
-  Backbone.View = function(options) {
+  var View = function(options) {
     this.cid = _.uniqueId('view');
     _viewsIndexedByCid[this.cid] = this;
     this._boundCollectionsByCid = {};
@@ -49,10 +50,9 @@
     this.trigger('initialize:after', options);
   };
 
-  Backbone.View.prototype = old_backbone_view.prototype;
-  Backbone.View.extend = old_backbone_view.extend;
+  View.extend = Backbone.View.extend;
 
-  var View = Backbone.View.extend({
+  _.extend(View.prototype, Backbone.View.prototype, {
     _configure: function(options) {
       //this.options is removed in Thorax.View, we merge passed
       //properties directly with the view and template context
@@ -658,7 +658,8 @@
       // android will use height of 1 because of minimumScrollYOffset
       return this.scrollTo(0, 0);
     }
-  }, {
+  });
+  _.extend(View, {
     registerHelper: function(name, callback) {
       this[name] = callback;
       Handlebars.registerHelper(name, this[name]);
