@@ -280,13 +280,13 @@ $(function() {
   });
 
   //FAIL!
-  //test("bindCollection or model.set can be called context()", function() {
-  //  //this caused recursion in previous versions
+  //test("bindCollection or model.set can be called in context()", function() {
+  //  //this causes recursion
   //  var view = new Application.View({
   //    model: new Application.Model(),
   //    template: '{{key}}{{#collection test}}{{key}}{{/collection}}',
   //    context: function() {
-  //      //this.model.set({key: 'value'});
+  //      this.model.set({key: 'value'});
   //      return {
   //        key: 'value',
   //        test: new Application.Collection([{key: 'value'}])
