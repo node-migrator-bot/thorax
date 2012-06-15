@@ -13,11 +13,48 @@
   },
   "dependencies": {
     "connect": "2.3.3",
-    "lumbar": "1.0.14"
+    "underscore": "1.3.3",
+    "mkdirp": "0.3.3",
+    "execSync": "0.0.1"
   },
   "scripts": {
     "start": "node test/bin/server.js . 8083",
     "test": "phantomjs test/bin/run-qunit.js 'http://localhost:8083/test/zepto.html' 'http://localhost:8083/test/jquery.html'"
   },
-  "main": "./thorax.js"
+  "builds": {
+    "base": {
+      "lib/thorax.js": "thorax.js"
+    },
+    "boilerplate-html": {
+      "files": {
+        "static/boilerplate-html": "",
+        "lib": "js/lib"
+      }
+    },
+    "boilerplate-lumbar": {
+      "files": {
+        "static/boilerplate-lumbar": "",
+        "lib": "js/lib"
+      }
+    },
+    "hello-world-lumbar": {
+      "builds": ["boilerplate-lumbar"],
+      "files": {
+        "static/boilerplate-lumbar": "",
+        "lib": "js/lib"
+      }
+    },
+    "kitchen-sink": {
+      "builds": ["boilerplate-lumbar", "hello-world-lumbar"],
+      "files": {
+        "static/bootstrap": "",
+        "static/loading": "",
+        "static/admin": ""
+      }
+    },
+    "test": {
+      "lib": "js/lib",
+      "static/test": ""
+    }
+  }
 }

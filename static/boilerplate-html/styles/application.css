@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>Thorax HTML Boilerplate</title>
-    <link rel="stylesheet" href="./styles/bootstrap.css">
-    <link rel="stylesheet" href="./styles/application.css">
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <link rel="stylesheet" href="./css/application.css">
     <script src="./js/lib/jquery.js"></script>
     <script src="./js/lib/bootstrap.js"></script>
     <script src="./js/lib/underscore.js"></script>
