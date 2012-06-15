@@ -1,33 +1,89 @@
 var fs = require('fs'),
     path = require('path'),
     _ = require('underscore'),
-    execSync = require('execSync'),
+    childProcess = require('child_process'),
+    exec = childProcess.exec,
+    async = require('async'),
     mkdirp = require('mkdirp'),
     packageJSON = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))),
     deepExtend = require(path.join(__dirname, 'deep-extend.js'));
 
+function execute(commands, callback) {
+  //console.log(commands.join("\n"));
+  exec(commands.join(";"), function(error, stdout, stderr) {
+    //if (stdout) {
+    //  console.log(stdout);
+    //}
+    if (stderr) {
+      console.log(stderr);
+    }
+    callback();
+  });
+}
 
-function buildPackage(name, target) {
-  var build = packageJSON.builds[name];
-  if (build.builds) {
-    build.builds.forEach(function(subBuild) {
-      buildPackage(subBuild, target);
+function buildPackage(name, target, complete) {
+  var build = packageJSON.builds[name],
+      lumbarJSONLocation = path.join(target, 'lumbar.json'),
+      pacakgeJSONLocation = path.join(target, 'package.json'),
+      oldLumbarJSON,
+      oldPackageJSON,
+      newPackageJSON,
+      newLumbarJSON;
+  console.log('lumbarJSONLocation',lumbarJSONLocation);
+  if (path.existsSync(lumbarJSONLocation)) {
+    console.log(fs.readFileSync(lumbarJSONLocation).toString())
+    oldLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
+  }
+  if (path.existsSync(pacakgeJSONLocation)) {
+    oldPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
+  }
+  function buildFiles() {
+    async.forEachSeries(_.map(build.files, function(targetPath, sourcePath) {
+      return {
+        targetPath: targetPath,
+        sourcePath: sourcePath
+      };
+    }), function(fileInfo, next) {
+      execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + '/ ' + path.join(target, fileInfo.targetPath)], next);
+    }, function() {
+      console.log('done building ',name);
+      if (path.existsSync(lumbarJSONLocation)) {
+        newLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
+        console.log('oldLumbarJSON', oldLumbarJSON);
+        console.log('newLumbarJSON', newLumbarJSON );
+      }
+      if (path.existsSync(pacakgeJSONLocation)) {
+        newPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
+      }
+      if (oldLumbarJSON && newLumbarJSON) {
+        fs.writeFileSync(lumbarJSONLocation, JSON.stringify(deepExtend(oldLumbarJSON, newLumbarJSON), null, 2));
+      }
+      if (oldPackageJSON && newPackageJSON) {
+        fs.writeFileSync(pacakgeJSONLocation, JSON.stringify(deepExtend(oldPackageJSON, newPackageJSON), null, 2));
+      }
+      complete();
     });
   }
-  if (build.files) {
-    _.each(build.files, function(targetPath, sourcePath) {
-      var response = execSync.stdout('cp -r ' + path.join(__dirname, '..', sourcePath) + '/ ' + path.join(target, targetPath));
-      console.log(response);
-    });
+  function buildBuilds(completeBuildBuilds) {
+    async.forEachSeries(_.clone(build.builds), function(subBuild, next) {
+      buildPackage(subBuild, target, next);
+    }, completeBuildBuilds);
+  }
+  if (build.builds) {
+    buildBuilds(buildFiles);
+  } else {
+    buildFiles();
   }
 }
+
 _.each(packageJSON.builds, function(build, name) {
   var targetDirectory = path.join(__dirname, '..', 'public', 'builds', name);
-  mkdirp.sync(targetDirectory);
-  buildPackage(name, targetDirectory);
+  mkdirp(targetDirectory, function() {
+    buildPackage(name, targetDirectory, function() {
+      console.log('building', targetDirectory);
+    });
+  });
 });
-
-console.log('packageJSON',packageJSON);
 
 /*
 var port = process.env.PORT || 3000,
@@ -134,26 +190,4 @@ var port = process.env.PORT || 3000,
       execute(['rm -rf ' + location], callback);
     };
 
-    
-app.use(express.logger());
-app.use(express.bodyParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/packages.json', function(request, response) {
-  response.send(JSON.stringify(packageJSON.packages));
-});
-
-app.post('/thorax.zip', function(request, response) {
-  var location = 'thorax.boilerplate.html';
-  createProject(request.body.repos || [], function(location) {
-    sendProject(location, response, function() {
-      destroyProject(location, function() {
-        response.end();
-      });
-    });
-  });
-});
-
-console.log("Listening on port " + port);
-app.listen(port);
 */
