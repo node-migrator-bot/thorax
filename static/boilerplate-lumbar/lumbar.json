@@ -1,0 +1,90 @@
+{
+  "application": {
+    "name": "Application",
+    "module": "base"
+  },
+  "modules": {
+    "base": {
+      "scripts": [
+        {
+          "src": "js/lib/zepto.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/underscore.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/backbone.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/handlebars.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/thorax.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/script.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/lumbar-loader.js"
+        },
+        {
+          "src": "js/lib/lumbar-loader-events.js"
+        },
+        {
+          "src": "js/lib/lumbar-loader-standard.js"
+        },
+        {
+          "src": "js/lib/lumbar-loader-backbone.js"
+        },
+        {
+          "src": "js/init.js"
+        },
+        {
+          "src": "js/router.js"
+        },
+        {
+          "src": "js/model.js"
+        },
+        {
+          "src": "js/collection.js"
+        },
+        {
+          "src": "js/view.js"
+        },
+        {
+          "module-map": true
+        }
+      ],
+      "styles": [
+        {
+          "src": "styles/base.styl"
+        }
+      ],
+      "static": [
+        {
+          "src": "static/index.html",
+          "dest": "index.html"
+        }
+      ]
+    }
+  },
+  "templates": {},
+  "styles": {
+    "pixelDensity": {
+      "web": [
+        1,
+        2
+      ]
+    },
+    "includes": [
+      "nib"
+    ]
+  },
+  "key": "value"
+}

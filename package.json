@@ -12,7 +12,8 @@
     "node": ">=0.4.7"
   },
   "dependencies": {
-    "connect": "*"
+    "connect": "2.3.3",
+    "lumbar": "1.0.14"
   },
   "scripts": {
     "start": "node test/bin/server.js . 8083",

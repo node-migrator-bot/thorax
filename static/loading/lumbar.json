@@ -1,0 +1,19 @@
+{
+  "thorax": {
+    "lib": [
+      {"src": "js/lib/thorax.loading.js", "module": "base", "after": {"lib": "thorax.js"}}
+    ],
+    "views": [
+      "js/views/loading-indicator.js"
+    ],
+    "styles": [
+      "styles/loading-indicator.styl"
+    ],
+    "templates": {
+      "js/views/loading-indicator.js": [
+        "templates/loading-indicator.handlebars",
+        "templates/inline-loading-indicator.handlebars"
+      ]
+    }
+  }
+}

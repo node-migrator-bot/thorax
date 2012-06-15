@@ -1,0 +1,27 @@
+{
+  "modules": {
+    "hello-world": {
+      "routes": {
+        "": "index"
+      },
+      "scripts": [
+        {
+          "src": "js/routers/hello-world.js"
+        },
+        {
+          "src": "js/views/hello-world/index.js"
+        }
+      ],
+      "styles": [
+        {
+          "src": "styles/hello-world.styl"
+        }
+      ]
+    }
+  },
+  "templates": {
+    "js/views/hello-world/index.js": [
+      "templates/hello-world/index.handlebars"
+    ]
+  }
+}

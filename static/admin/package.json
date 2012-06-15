@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "socket.io": "0.9.6"
+  },
+  "scripts": {
+    "start": "node index.js --watch --admin"
+  }
+}
