@@ -1,3 +1,18 @@
+# Todo:
+# - create the editor with the editor
+# - module modal
+# - edit routes modal
+# - find relevant files mode, should appear as tooltip
+#   look at data-view-name, data-model-name data-collection-name
+# - break editor and creator into lumbar files
+# - fix heroku deploy problem
+# 
+# - object inspector
+#   be able to click on anything and have a modal appear
+#   showing a link to edit the file
+#   and a form to edit the bound models or collections
+#   form will attempt to call @save() on the live data model  
+
 prefix = '/admin'
 savedEditor = localStorage?.getItem 'thorax-admin-editor'
 window.Application = Application = new Thorax.Application editor: savedEditor or 'browser'
@@ -76,25 +91,9 @@ Module = Application.Model.extend
         if type
           model = new Application.Model raw: item
           if type is 'views'
-            console.log @attributes.name
             model.attributes.moduleName = @attributes.name
             model.attributes.templates = lumbarConfig.templatesCollectionFromViewPath model.attributes.raw.src
           @attributes[type].add model
-
-#        <table class="table table-bordered table-striped table-condensed">
-#          <thead>
-#            <tr>
-#              <th>Route</th>
-#              <th class="right">Method</th>
-#            </tr>
-#          </thead>
-#          {{#collection routes tag="tbody"}}
-#            <tr>
-#              <td>{{route}}</td>
-#              <td class="right">{{method}}</td>
-#            </tr>
-#          {{/collection}}
-#        </table>
 
 generator = new Application.View
   generate: (type, context) ->
@@ -163,8 +162,6 @@ Application.View.extend
 MainView = Application.View.extend
   name: 'main'
   events:
-    'click button.action-save': 'saveEditor'
-    'click button.action-close': 'closeEditor'
     'change select.editor': (event) ->
       Application.editor = $(event.target).val()
       localStorage?.setItem 'thorax-admin-editor', Application.editor 
@@ -192,11 +189,21 @@ MainView = Application.View.extend
       @frame.setView @editorView
       @editorView.edit()
   closeEditor: (event) ->
+    event.preventDefault()
     if confirm 'Close without saving?'
       @openApplication()
   saveEditor: (event) ->
+    event.preventDefault()
     @editorView.save =>
       @openApplication()
+  createModule: (event) ->
+    console.log '!'
+  toggleInspector: (event) ->
+    _.defer =>
+      target = $(event.target)
+      toggled = target.hasClass 'active'
+      target.html if toggled then 'Inspector On' else 'Inspector Off'
+      @applicationWindow.setInspectorMode toggled
   template: """
     <div class="navbar-placeholder"></div>
     <div class="navbar navbar-fixed-top">
@@ -205,7 +212,9 @@ MainView = Application.View.extend
           <div class="view-application">
             <div class="nav pull-right">
               <form class="form-inline">
-                <label class="navbar-text">Editor</label>
+                <button class="btn btn-small" data-toggle="button" data-call-method="toggleInspector">Inspector Off</button>
+                <button class="btn btn-primary btn-small" data-call-method="createModule">Create Module</button>
+                <label class="navbar-text">Open files with:</label>
                 <select class="editor">
                   {{#each editors}}
                     <option value="{{value}}">{{key}}</option>
@@ -218,8 +227,8 @@ MainView = Application.View.extend
           </div>
           <div class="view-editor">
             <div class="nav pull-right">
-              <button class="btn btn-danger action-close">Close</button>
-              <button class="btn btn-primary action-save">Save</button>
+              <button class="btn btn-danger" data-call-method="closeEditor">Close</button>
+              <button class="btn btn-primary" data-call-method="saveEditor">Save</button>
             </div>
             <span class="brand">Editing</span>
             <label class="navbar-text"></label>
@@ -240,7 +249,7 @@ editOrCreate = (event) ->
   if createType
     new CreateFileModal module: moduleName, type: createType
   else if editModuleRoutes
-    console.log 'edit routes'
+    new EditRoutesModal model: lumbarConfig.attributes.modules.find (module) -> module.attributes.name is moduleName
   else
     openFile target.attr('href')
 
@@ -329,10 +338,72 @@ Application.View.extend
     src: '/'
   name: 'application-window'
   template: ""
+  getWindow: ->
+    @$el[0].contentWindow
   reload: ->
-    @$el[0].contentWindow.location.reload()
+    @getWindow().location.reload()
   navigate: (url, options) ->
-    @$el[0].contentWindow.Backbone.history.navigate url, options
+    @getWindow().Backbone.history.navigate url, options
+  initialize: ->
+    @boundViewClicked = _.bind @viewClicked, @
+  viewClicked: (event) ->
+    console.log '!'
+  setInspectorMode: (active) ->
+    @getWindow().$('[data-view-cid]')[if active then 'on' else 'off'] 'click', @boundViewClicked
+
+EditRoutesModal = Application.View.extend
+  events:
+    'submit form': (event) ->
+      @serialize event, (attributes, release) =>
+        console.log attributes
+        release()
+  hide: ->
+    @$el.modal 'hide'
+  show: ->
+    @$el.modal 'show'
+  initialize: ->
+    $('body').append @$el
+    @render()
+    @show()
+    @$el.on 'hidden', => @destroy()
+  createRoute: (event) ->
+    @model.attributes.routes.add new Application.Model route: '', method: ''
+    @$('tbody > tr:last-child td:first-child input')[0].focus()
+  removeRoute: (event) ->
+    $(event.target).parents('[data-model-cid]').attr('data-model-cid')
+  template: """
+    <div class="modal">
+      <form class="form-vertical">
+        <div class="modal-header">
+          <h3>Edit "{{name}}" Routes</h3>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered table-striped table-condensed">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Method</th>
+                <th></th>
+              </tr>
+            </thead>
+            {{#collection routes tag="tbody"}}
+              <tr>
+                <td><input type="text" id="route-{{cid}}" name="route-{{cid}}" value="{{route}}"></td>
+                <td><input type="text" id="method-{{cid}}" name="method-{{cid}}" value="{{method}}"></td>
+                <td><button class="btn btn-danger btn-mini" data-call-method="removeRoute">Remove</button></td>
+              </tr>
+            {{/collection}}
+          </table>
+          <button class="btn btn-success" data-call-method="createRoute">Create Route</button>
+        </div>
+        <div class="modal-footer">
+          <input type="submit" class="btn btn-primary" data-dismiss="modal">
+        </div>
+      </form>
+    </div>
+  """
+
+
 
 CreateFileModal = Application.View.extend
   events: ->
