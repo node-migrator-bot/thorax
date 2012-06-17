@@ -7,7 +7,9 @@ var fs = require('fs'),
     mkdirp = require('mkdirp'),
     watchTree = require('fs-watch-tree').watchTree,
     packageJSON = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))),
-    deepExtend = require(path.join(__dirname, 'deep-extend.js'));
+    deepExtend = require(path.join(__dirname, 'deep-extend.js')),
+    lumbarJSONByTarget = {},
+    packageJSONByTarget = {};
 
 function execute(commands, callback) {
   exec(commands.join(";"), function(error, stdout, stderr) {
@@ -18,40 +20,44 @@ function execute(commands, callback) {
   });
 }
 
+function saveLumbarJSONForTarget(target) {
+  fs.writeFileSync(target, JSON.stringify(lumbarJSONByTarget[target], null, 2))
+}
+
+function savePackageJSONForTarget(target) {
+  fs.writeFileSync(target, JSON.stringify(packageJSONByTarget[target], null, 2))
+}
+
 function buildPackage(name, target, complete) {
   var build = packageJSON.builds[name],
       lumbarJSONLocation = path.join(target, 'lumbar.json'),
-      pacakgeJSONLocation = path.join(target, 'package.json'),
-      oldLumbarJSON,
-      oldPackageJSON,
-      newPackageJSON,
-      newLumbarJSON;
-  if (path.existsSync(lumbarJSONLocation)) {
-    oldLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
-  }
-  if (path.existsSync(pacakgeJSONLocation)) {
-    oldPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
-  }
+      pacakgeJSONLocation = path.join(target, 'package.json');
+      lumbarJSONByTarget[lumbarJSONLocation] = lumbarJSONByTarget[lumbarJSONLocation] || {};
+      packageJSONByTarget[pacakgeJSONLocation] = packageJSONByTarget[pacakgeJSONLocation] || {};
   function buildFiles() {
-    async.forEachSeries(_.map(build.files, function(targetPath, sourcePath) {
+    var directives = _.map(build.files, function(targetPath, sourcePath) {
       return {
+        isFile: true,
         targetPath: targetPath,
         sourcePath: sourcePath
       };
-    }), function(fileInfo, next) {
-      execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + '/ ' + path.join(target, fileInfo.targetPath)], next);
+    });
+    directives = directives.concat(_.map(build.directories, function(targetPath, sourcePath) {
+      return {
+        isFile: false,
+        targetPath: targetPath,
+        sourcePath: sourcePath
+      };
+    }));
+
+    async.forEachSeries(directives, function(fileInfo, next) {
+      execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + (!fileInfo.isFile ? '/' : '') + ' ' + path.join(target, fileInfo.targetPath)], next);
     }, function() {
       if (path.existsSync(lumbarJSONLocation)) {
-        newLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
+        deepExtend(lumbarJSONByTarget[lumbarJSONLocation], JSON.parse(fs.readFileSync(lumbarJSONLocation)));
       }
       if (path.existsSync(pacakgeJSONLocation)) {
-        newPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
-      }
-      if (oldLumbarJSON && newLumbarJSON) {
-        fs.writeFileSync(lumbarJSONLocation, JSON.stringify(deepExtend(oldLumbarJSON, newLumbarJSON), null, 2));
-      }
-      if (oldPackageJSON && newPackageJSON) {
-        fs.writeFileSync(pacakgeJSONLocation, JSON.stringify(deepExtend(oldPackageJSON, newPackageJSON), null, 2));
+        deepExtend(packageJSONByTarget[pacakgeJSONLocation], JSON.parse(fs.readFileSync(pacakgeJSONLocation)));
       }
       complete();
     });
@@ -80,6 +86,14 @@ function buildAllPackages() {
     var targetDirectory = path.join(__dirname, '..', 'public', 'builds', name);
     mkdirp(targetDirectory, function() {
       buildPackage(name, targetDirectory, function() {
+        var lumbarJSONLocation = path.join(targetDirectory, 'lumbar.json');
+        if (path.existsSync(lumbarJSONLocation)) {
+          saveLumbarJSONForTarget(lumbarJSONLocation);
+        }
+        var packageJSONLocation = path.join(targetDirectory, 'package.json');
+        if (path.existsSync(packageJSONLocation)) {
+          savePackageJSONForTarget(packageJSONLocation);
+        }
         execute(['zip ' + targetDirectory + '.zip -r ' + targetDirectory], function() {
           console.log('built', name);
           next();
@@ -89,9 +103,3 @@ function buildAllPackages() {
   });
 }
 buildAllPackages();
-
-var watchCallback = _.throttle(function(event) {
-  buildAllPackages();
-}, 1000);
-watchTree(path.join(__dirname, '..', 'static'), watchCallback);
-watchTree(path.join(__dirname, '..', 'lib'), watchCallback);

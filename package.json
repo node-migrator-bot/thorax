@@ -24,36 +24,39 @@
   },
   "builds": {
     "base": {
-      "lib/thorax.js": "thorax.js"
+      "files": {
+        "lib/thorax.js": "thorax.js",
+        "static/loading/js/lib/thorax.loading.js": "thorax.loading.js"
+      }
     },
     "boilerplate-html": {
-      "files": {
+      "directories": {
         "static/boilerplate-html": "",
         "lib": "js/lib"
       }
     },
     "boilerplate-lumbar": {
-      "files": {
+      "directories": {
         "static/boilerplate-lumbar": "",
         "lib": "js/lib"
       }
     },
     "hello-world-lumbar": {
       "builds": ["boilerplate-lumbar"],
-      "files": {
+      "directories": {
         "static/hello-world": ""
       }
     },
     "kitchen-sink": {
       "builds": ["boilerplate-lumbar", "hello-world-lumbar"],
-      "files": {
+      "directories": {
         "static/bootstrap": "",
         "static/loading": "",
         "static/admin": ""
       }
     },
     "test": {
-      "files": {
+      "directories": {
         "static/test": "",
         "lib": "js/lib"
       }
