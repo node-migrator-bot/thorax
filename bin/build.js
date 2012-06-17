@@ -29,9 +29,7 @@ function buildPackage(name, target, complete) {
       oldPackageJSON,
       newPackageJSON,
       newLumbarJSON;
-  console.log('lumbarJSONLocation',lumbarJSONLocation);
   if (path.existsSync(lumbarJSONLocation)) {
-    console.log(fs.readFileSync(lumbarJSONLocation).toString())
     oldLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
   }
   if (path.existsSync(pacakgeJSONLocation)) {
@@ -46,11 +44,8 @@ function buildPackage(name, target, complete) {
     }), function(fileInfo, next) {
       execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + '/ ' + path.join(target, fileInfo.targetPath)], next);
     }, function() {
-      console.log('done building ',name);
       if (path.existsSync(lumbarJSONLocation)) {
         newLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
-        console.log('oldLumbarJSON', oldLumbarJSON);
-        console.log('newLumbarJSON', newLumbarJSON );
       }
       if (path.existsSync(pacakgeJSONLocation)) {
         newPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
@@ -76,118 +71,21 @@ function buildPackage(name, target, complete) {
   }
 }
 
-_.each(packageJSON.builds, function(build, name) {
+async.forEachSeries(_.map(packageJSON.builds, function(build, name) {
+  return {
+    name: name,
+    build: build
+  };
+}), function(item, next) {
+  var build = item.build;
+  var name = item.name;
   var targetDirectory = path.join(__dirname, '..', 'public', 'builds', name);
   mkdirp(targetDirectory, function() {
     buildPackage(name, targetDirectory, function() {
-      console.log('building', targetDirectory);
+      execute(['zip ' + targetDirectory + '.zip -r ' + targetDirectory], function() {
+        console.log('built', name);
+        next();
+      });
     });
   });
 });
-
-/*
-var port = process.env.PORT || 3000,
-    fs = require('fs'),
-    path = require('path'),
-    _ = require('underscore'),
-    deepExtend = require(path.join(__dirname, 'deep-extend.js')),
-    express = require('express'),
-    childProcess = require('child_process'),
-    app = express.createServer(),
-    exec = childProcess.exec,
-    spawn = childProcess.spawn,
-    packageJSON = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'))),
-    createBaseDirectoryStructure = function(repoLocation) {
-      return [
-        'mkdir ' + path.join(repoLocation, 'public'),
-        'mkdir ' + path.join(repoLocation, 'styles'),
-        'mkdir ' + path.join(repoLocation, 'server'),
-        'mkdir ' + path.join(repoLocation, 'templates'),
-        'mkdir ' + path.join(repoLocation, 'js', 'collections'),
-        'mkdir ' + path.join(repoLocation, 'js', 'models'),
-        'mkdir ' + path.join(repoLocation, 'js', 'routers'),
-        'mkdir ' + path.join(repoLocation, 'js', 'views')
-        ].join(';');
-    },
-    execute = function(commands, callback) {
-      console.log(commands.join("\n"));
-      exec(commands.join(";"), function(error, stdout, stderr) {
-        if (stdout) {
-          console.log(stdout);
-        }
-        if (stderr) {
-          console.log(stderr);
-        }
-        callback();
-      });
-    },
-    createProject = function(repos, callback) {
-      var location = 'thorax-' + (new Date).getTime().toString(),
-          lumbarJSONLocation = path.join(location, 'lumbar.json'),
-          pacakgeJSONLocation = path.join(location, 'package.json');
-      function mergeRepo(repo, complete) {
-        if (!repo) {
-          complete();
-        } else {
-          var repoLocation = path.join(__dirname, 'tmp' + '-' + (new Date()).getTime().toString());
-          execute([
-            'git clone git://github.com/' + repo + '.git ' + repoLocation,
-            createBaseDirectoryStructure(repoLocation),
-            'rm -rf ' + path.join(repoLocation, '.git')
-          ], function() {
-            var oldLumbarJSON, oldPackageJSON;
-            if (path.existsSync(lumbarJSONLocation)) {
-              oldLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
-            }
-            if (path.existsSync(pacakgeJSONLocation)) {
-              oldPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
-            }
-            execute([
-              'cp -r ' + repoLocation + '/ ' + location,
-              'rm -rf ' + repoLocation
-            ], function() {
-              var newLumbarJSON, newPackageJSON;
-              if (path.existsSync(lumbarJSONLocation)) {
-                newLumbarJSON = JSON.parse(fs.readFileSync(lumbarJSONLocation));
-              }
-              if (path.existsSync(pacakgeJSONLocation)) {
-                newPackageJSON = JSON.parse(fs.readFileSync(pacakgeJSONLocation));
-              }
-              if (oldLumbarJSON && newLumbarJSON) {
-                fs.writeFileSync(lumbarJSONLocation, JSON.stringify(deepExtend(oldLumbarJSON, newLumbarJSON), null, 2));
-              }
-              if (oldPackageJSON && newPackageJSON) {
-                fs.writeFileSync(pacakgeJSONLocation, JSON.stringify(deepExtend(oldPackageJSON, newPackageJSON), null, 2));
-              }
-              mergeRepo(repos.shift(), complete);
-            });
-          });
-        }
-      }
-      execute(['mkdir ' + location], function() {
-        mergeRepo(repos.shift(), function() {
-          callback(location);
-        });
-      });
-    },
-    sendProject = function(location, response, callback) {
-      var zip = spawn('tar', ['-cz', location]);
-      response.contentType('zip');
-      zip.stdout.on('data', function(data) {
-        response.write(data);
-      });
-      zip.on('exit', function(code) {
-        if (code !== 0) {
-          response.statusCode = 500;
-          console.log('tar process exited with code ' + code);
-          callback();
-        } else {
-          callback();
-        }
-      });
-    },
-    destroyProject = function(location, callback) {
-      execute(['rm -rf ' + location], callback);
-    };
-
-*/

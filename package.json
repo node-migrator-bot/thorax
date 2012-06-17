@@ -40,8 +40,7 @@
     "hello-world-lumbar": {
       "builds": ["boilerplate-lumbar"],
       "files": {
-        "static/boilerplate-lumbar": "",
-        "lib": "js/lib"
+        "static/hello-world": ""
       }
     },
     "kitchen-sink": {

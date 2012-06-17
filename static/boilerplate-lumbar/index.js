@@ -3,6 +3,7 @@ var childProcess = require('child_process'),
   spawn = childProcess.spawn,
   fs = require('fs'),
   path = require('path'),
+  port = process.env.PORT,
   execute = function(commands, callback) {
     console.log(commands.join("\n"));
     exec(commands.join(";"), function(error, stdout, stderr) {
@@ -42,14 +43,20 @@ var childProcess = require('child_process'),
     }
 
     if (!port) {
-      portscanner.findAPortNotInUse(port, port + 25, 'localhost', function(error, foundPort) {
+      portscanner.findAPortNotInUse(8000, 8025, 'localhost', function(error, foundPort) {
         listen(foundPort);
       });
     } else {
       listen(port);
     }
+
+    var serverPath = path.join(__dirname, 'server');
+
+    if (!path.existsSync(serverPath)) {
+      fs.mkdirSync(serverPath);
+    }
     
-    fs.readdirSync(path.join(__dirname, 'server')).forEach(function(file) {
+    fs.readdirSync(serverPath).forEach(function(file) {
       if (file.match(/\.js$/)) {
         //second parameter is reserved for future use, secureServer
         require(path.join(__dirname, 'server', file))(server, null, argv);
