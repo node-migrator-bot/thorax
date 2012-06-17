@@ -5,15 +5,12 @@ var fs = require('fs'),
     exec = childProcess.exec,
     async = require('async'),
     mkdirp = require('mkdirp'),
+    watchTree = require('fs-watch-tree').watchTree,
     packageJSON = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))),
     deepExtend = require(path.join(__dirname, 'deep-extend.js'));
 
 function execute(commands, callback) {
-  //console.log(commands.join("\n"));
   exec(commands.join(";"), function(error, stdout, stderr) {
-    //if (stdout) {
-    //  console.log(stdout);
-    //}
     if (stderr) {
       console.log(stderr);
     }
@@ -71,21 +68,30 @@ function buildPackage(name, target, complete) {
   }
 }
 
-async.forEachSeries(_.map(packageJSON.builds, function(build, name) {
-  return {
-    name: name,
-    build: build
-  };
-}), function(item, next) {
-  var build = item.build;
-  var name = item.name;
-  var targetDirectory = path.join(__dirname, '..', 'public', 'builds', name);
-  mkdirp(targetDirectory, function() {
-    buildPackage(name, targetDirectory, function() {
-      execute(['zip ' + targetDirectory + '.zip -r ' + targetDirectory], function() {
-        console.log('built', name);
-        next();
+function buildAllPackages() {
+  async.forEachSeries(_.map(packageJSON.builds, function(build, name) {
+    return {
+      name: name,
+      build: build
+    };
+  }), function(item, next) {
+    var build = item.build;
+    var name = item.name;
+    var targetDirectory = path.join(__dirname, '..', 'public', 'builds', name);
+    mkdirp(targetDirectory, function() {
+      buildPackage(name, targetDirectory, function() {
+        execute(['zip ' + targetDirectory + '.zip -r ' + targetDirectory], function() {
+          console.log('built', name);
+          next();
+        });
       });
     });
   });
-});
+}
+buildAllPackages();
+
+var watchCallback = _.throttle(function(event) {
+  buildAllPackages();
+}, 1000);
+watchTree(path.join(__dirname, '..', 'static'), watchCallback);
+watchTree(path.join(__dirname, '..', 'lib'), watchCallback);
