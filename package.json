@@ -52,7 +52,8 @@
       "directories": {
         "static/bootstrap": "",
         "static/loading": "",
-        "static/admin": ""
+        "static/admin": "",
+        "lib": "public/admin/js/lib"
       }
     },
     "test": {
