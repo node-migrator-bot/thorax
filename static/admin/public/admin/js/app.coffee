@@ -1,11 +1,8 @@
 # Todo:
-# - create the editor with the editor
 # - module modal
 # - edit routes modal
 # - find relevant files mode, should appear as tooltip
 #   look at data-view-name, data-model-name data-collection-name
-# - break editor and creator into lumbar files
-# - fix heroku deploy problem
 # 
 # - object inspector
 #   be able to click on anything and have a modal appear
