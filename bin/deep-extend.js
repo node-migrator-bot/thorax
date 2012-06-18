@@ -1,3 +1,4 @@
+// custom hacks for lumbar.json processing
 // Based conceptually on the _.extend() function in underscore.js ( http://documentcloud.github.com/underscore/#extend )
 // Author: Kurt Milam - http://xioup.com
 var _ = require('underscore');
@@ -21,7 +22,18 @@ module.exports = function(obj) {
           if (!_.isArray(obj[prop]) || !_.isArray(source[prop])){
             throw 'Error: Trying to combine an array with a non-array (' + prop + ')';
           } else {
-            obj[prop] = _.reject(_.deepExtend(obj[prop], source[prop]), function (item) { return _.isNull(item);});
+            source[prop].forEach(function(item) {
+              if ((!_.isObject(item) && obj[prop].indexOf(item) === -1) || (_.isObject(item) && !item.src && !item['module-map'])) {
+                obj[prop].push(item);
+              } else if (!_.find(obj[prop], function(_item) {
+                return _item.src === item.src;
+              })) {
+                obj[prop].push(item);
+              }
+
+            });
+            //obj[prop] = 
+            //obj[prop] = _.reject(_.deepExtend(obj[prop], source[prop]), function (item) { return _.isNull(item);});
           }
         }
         else if (_.isObject(obj[prop]) || _.isObject(source[prop])){
