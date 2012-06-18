@@ -35,8 +35,7 @@ $(function() {
         four: 'cc'
       }
     });
-    console.log('-------');
-    console.log(view.html());
+
     attributes = view.serialize();
     equal(attributes.one, 'aa', 'serialize attributes from populate()');
     equal(attributes.two, 'b', 'serialize attributes from populate()');
