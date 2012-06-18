@@ -174,7 +174,6 @@ function bindToRoute(callback, failback) {
 
     var args = Array.prototype.slice.call(arguments, 1);
     if (!isCanceled && same) {
-      console.log('args', args);
       callback.apply(this, args);
     } else {
       failback && failback.apply(this, args);
@@ -188,7 +187,6 @@ function bindToRoute(callback, failback) {
 }
 
 function loadData(callback, failback, options) {
-  console.log('populated', this.isPopulated());
   if (this.isPopulated()) {
     return callback(this);
   }
@@ -244,7 +242,6 @@ function flushQueue(self, fetchQueue, handler) {
     }
   }
 }
-
 
 _.each([Thorax.Collection, Thorax.Model], function(DataClass) {
   var $fetch = DataClass.prototype.fetch;
@@ -309,7 +306,6 @@ Thorax.Model.prototype._loadCollection = function(collection, options) {
   }, options);
 };
 
-
 Thorax.Router.prototype.bindToRoute = bindToRoute;
 Thorax.Router.bindToRoute = bindToRoute;
 
@@ -327,7 +323,7 @@ _.extend(Thorax.View.prototype, {
 
   // Propagates loading view parameters to the AJAX layer
   setCollectionOptions: function(collection, options) {
-    return superSetCollectionOptions.call(this, _.defaults({
+    return superSetCollectionOptions.call(this, collection, _.defaults({
       ignoreErrors: this.ignoreFetchError,
       background: this.nonBlockingLoad
     }, options || {}));
@@ -371,31 +367,31 @@ Thorax.View.registerEvents({
   }
 });
 
-Thorax.View.registerHelper('loading', function(collectionOrModel, options) {
-  if (arguments.length === 1) {
-    options = collectionOrModel;
-    collectionOrModel = false;
-  }
-  var view = this._view;
-  view._renderOnLoadStart = true;
-  view._renderOnLoadEnd = true;
-  if ($(this.el).hasClass(this._loadingClassName)) {
-    return options.fn(this);
-  } else {
-    return options.inverse(this);
-  }
-});
+//Thorax.View.registerHelper('loading', function(collectionOrModel, options) {
+//  if (arguments.length === 1) {
+//    options = collectionOrModel;
+//    collectionOrModel = false;
+//  }
+//  var view = this._view;
+//  view._renderOnLoadStart = true;
+//  view._renderOnLoadEnd = true;
+//  if ($(this.el).hasClass(this._loadingClassName)) {
+//    return options.fn(this);
+//  } else {
+//    return options.inverse(this);
+//  }
+//});
 
-var oldCollectionHelper = Handlebars.helpers.collection;
-Thorax.View.collection = Handlebars.helpers.collection = function(collection, options) {
-  if (arguments.length === 1) {
-    options = collection;
-    collection = this._view.collection;
-  }
-  if (options['loading-view'] || options['loading-template']) {
-    
-  }
-  return oldCollectionHelper.call(this, collection, options);
-};
+//var oldCollectionHelper = Handlebars.helpers.collection;
+//Thorax.View.collection = Handlebars.helpers.collection = function(collection, options) {
+//  if (arguments.length === 1) {
+//    options = collection;
+//    collection = this._view.collection;
+//  }
+//  if (options['loading-view'] || options['loading-template']) {
+//    
+//  }
+//  return oldCollectionHelper.call(this, collection, options);
+//};
 
 })();

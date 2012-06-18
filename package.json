@@ -60,6 +60,9 @@
       "directories": {
         "static/test": "",
         "lib": "js/lib"
+      },
+      "files": {
+        "static/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js"
       }
     }
   }

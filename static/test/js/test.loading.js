@@ -371,19 +371,8 @@ $(function(){
   test('data load on abort sends load events', function() {
     var success = this.spy(),
         failback = this.spy();
-    console.log('this.model.isPopulated', this.model.isPopulated());
-    this.model.load(function() {
-        console.log('a');
-        console.log(arguments);
-    }, function() {
-        console.log('b');
-        console.log(arguments);
-    });
-
     this.model.load(success, failback);
     this.requests[0].abort();
-
-    console.log(this.requests[0])
   
     equal(success.callCount, 0);
     equal(failback.callCount, 1);
@@ -619,8 +608,8 @@ $(function(){
   });
 
   test("loading-template and loading-view collection helper options", function() {
-    return;
     ok(true);
+    return;
     //this.xhr = sinon.useFakeXMLHttpRequest();
     var requests = this.requests = [];
 
@@ -644,10 +633,6 @@ $(function(){
     equal(collectionLoadingTemplateView.$('li').length, 0);
     requests[0].respond(200, { "Content-Type": "application/json" },'[]');
 
-
-
-
-    console.log(collectionLoadingTemplateView.html());
 
     //var collectionLoadingViewView = new Application.View({
     //  template: '{{#collection loading-view="collection-loading-view" tag="ul"}}<li class="item">item</li>{{else}}<li class="empty-item">empty</li>{{/collection}}',
