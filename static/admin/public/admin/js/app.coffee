@@ -1,14 +1,8 @@
-# Todo:
-# - module modal
-# - edit routes modal
-# - find relevant files mode, should appear as tooltip
-#   look at data-view-name, data-model-name data-collection-name
-# 
-# - object inspector
-#   be able to click on anything and have a modal appear
-#   showing a link to edit the file
-#   and a form to edit the bound models or collections
-#   form will attempt to call @save() on the live data model  
+# TODO:
+# - fix module loading problem when creating new modules (can't visit route on freshly created module)
+# - persist location between editor and application window
+#   - needs to work on reload
+#   - needs to work on editor close
 
 prefix = '/admin'
 savedEditor = localStorage?.getItem 'thorax-admin-editor'
