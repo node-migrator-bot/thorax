@@ -61,15 +61,55 @@ LumbarConfig = Application.Model.extend
   templatesCollectionFromViewPath: (path) ->
     new Application.Collection _.collect @_templates[path] || [], (templatePath) ->
       path: templatePath
+  getModuleByName: (moduleName) ->
+    @attributes.modules.find (module) ->
+      module.attributes.name is moduleName
+  setRoutesForModule: (moduleName, routes) ->
+    foundModule = @getModuleByName moduleName
+    routesCollection = foundModule.attributes.routes
+    routesCollection.reset foundModule.routesModelsFromRawRoutes routes
+    @attributes.raw.modules[moduleName].routes = routes
+  addViewToModule: (moduleName, viewName) ->
+    foundModule = @getModuleByName moduleName
+    model = new Application.Model
+      moduleName: moduleName
+      templates: lumbarConfig.templatesCollectionFromViewPath viewName
+      raw:
+        src: viewName
+    foundModule.attributes.views.add model
+    @attributes.raw.modules[moduleName].scripts.push src: viewName
+  addModelToModule: (moduleName, modelName) ->
+    foundModule = @getModuleByName moduleName
+    foundModule.attributes.models.add new Application.Model raw: src: modelName
+    @attributes.raw.modules[moduleName].scripts.push src: modelName
+  addCollectionToModule: (moduleName, collectionName) ->
+    foundModule = @getModuleByName moduleName
+    foundModule.attributes.collections.add new Application.Model raw: src: collectionName
+    @attributes.raw.modules[moduleName].scripts.push src: collectionName
+  addLibraryToModule: (moduleName, libraryName) ->
+    foundModule = @getModuleByName moduleName
+    foundModule.attributes.lib.add new Application.Model raw: src: libraryName
+    @attributes.raw.modules[moduleName].scripts.push src: libraryName
+  addTemplate: (view, templates) ->
+    @attributes.raw.templates[view] = @attributes.raw.templates[view] || {}
+    @attributes.raw.templates[view] = templates
+
+  save: ->
+    #jquery.post doesn't serialize empty keys properly, so send as a string
+    $.ajax
+      type: 'POST'
+      url: this.urlRoot
+      data: payload: JSON.stringify @attributes.raw
+      dataType: 'text'
 
 lumbarConfig = new LumbarConfig
 
 Module = Application.Model.extend
   initialize: (attributes) ->
     if @attributes.raw.routes
-      @attributes.routes = new Application.Collection _.collect @attributes.raw.routes, (method, route) ->
-        method: method
-        route: route
+      @attributes.routes = new Application.Collection @routesModelsFromRawRoutes @attributes.raw.routes
+    else
+      @attributes.routes = new Application.Collection
     @attributes.views = new Application.Collection
     @attributes.collections = new Application.Collection
     @attributes.models = new Application.Collection
@@ -80,8 +120,10 @@ Module = Application.Model.extend
     if @attributes.raw.styles
       @attributes.styles = new Application.Collection _.collect @attributes.raw.styles, (style) ->
         if typeof style is 'string' then {raw: {src: style}} else {raw: style}
+    else
+      @attributes.styles = new Application.Collection
 
-    @attributes.raw.scripts.forEach (script) =>
+    @attributes?.raw?.scripts?.forEach (script) =>
       item = if typeof script is 'string' then {src: script} else script
       if item.src
         type = thoraxConfig.typeFromPath item.src
@@ -92,11 +134,74 @@ Module = Application.Model.extend
             model.attributes.templates = lumbarConfig.templatesCollectionFromViewPath model.attributes.raw.src
           @attributes[type].add model
 
+  routesModelsFromRawRoutes: (rawRoutes) ->
+    _.collect rawRoutes, (method, route) ->
+      new Application.Model
+        method: method
+        route: route
+
 generator = new Application.View
-  generate: (type, context) ->
-    @template @templates[type], context
+  writeFile: (path, content) ->
+    $.post prefix + '/file?path=' + path, content: content
   createFile: (options) ->
-    console.log 'createfile', options
+    filename = thoraxConfig.attributes.paths[options.type + 's'] + '/' + options.name + '.js'
+    output = @templates[options.type](options)
+    @writeFile filename, output
+    if options.type is 'view'
+      if options['create-template']
+        templateFileName = thoraxConfig.attributes.paths.templates + '/' + options.name + '.handlebars'
+        @writeFile templateFileName, options.name
+        lumbarConfig.addTemplate filename, [templateFileName]
+      lumbarConfig.addViewToModule options.module, filename
+    else if options.type is 'model'
+      lumbarConfig.addModelToModule options.module, filename
+    else if options.type is 'collection'
+      lumbarConfig.addCollectionToModule options.module, filename
+    else if options.type is 'lib'
+      lumbarConfig.addLibaryToModule options.module, filename
+    lumbarConfig.save()
+
+  createModule: (moduleName, routes, viewsToCreate) ->
+    routerOutput = @templates.router name: moduleName, methods: @generateRouterMethods moduleName, routes, viewsToCreate
+    @writeFile thoraxConfig.attributes.paths.routers + '/' + moduleName + '.js', routerOutput
+
+    module = new Module(name: moduleName, raw: {})
+    lumbarConfig.attributes.modules.add module
+    
+    styleSheetPath = thoraxConfig.attributes.paths.styles + '/' + moduleName + '.styl'
+    @writeFile styleSheetPath, ''
+    module.attributes.styles.add new Application.Model(raw: {src: styleSheetPath})
+
+    lumbarConfig.attributes.raw.modules[moduleName] = {
+      scripts: [],
+      styles: [
+        {src: styleSheetPath}
+      ]
+    }
+
+    lumbarConfig.setRoutesForModule moduleName, routes
+    viewsToCreate.forEach (viewToCreate) =>
+      @createFile
+        type: 'view'
+        module: moduleName
+        name: viewToCreate
+        'create-template': 'on'
+
+    lumbarConfig.save()
+
+  generateRouterMethods: (moduleName, routes, viewsToCreate) ->
+    console.log 'routes', routes
+    methods = _.map routes, (method, path) ->
+      signature = path.match(/\:[\w]+/g)?.map((item) -> item.replace(/\:/, '')).join(', ').replace(/\-/g, '_')
+      method = if method.match(/\-/) then '"' + method + '"' else method
+      output = "  #{method}: function(#{signature || ''}) {\n"
+      if viewsToCreate.indexOf method isnt -1
+        output += "    var view = this.view('#{moduleName}/#{method}');\n"
+        output += "    Application.setView(view);\n"
+      output += "  }"
+      output
+    methods.join(",\n")
+
   templates:
     collection: Handlebars.compile """
       Application.Collection.extend({
@@ -112,7 +217,7 @@ generator = new Application.View
       Application.Router.extend({
         name: module.name,
         routes: module.routes,
-        {{methods}}
+      {{{methods}}}
       });
     """
     view: Handlebars.compile """
@@ -169,6 +274,7 @@ MainView = Application.View.extend
       value: value
       key: key
     @frame = new Application.Layout attributes: class: 'display-frame'
+
     Application.bind 'reload', =>
       if @applicationWindow and @frame.view is @applicationWindow
         @applicationWindow.reload()
@@ -194,12 +300,12 @@ MainView = Application.View.extend
     @editorView.save =>
       @openApplication()
   createModule: (event) ->
-    console.log '!'
+    new CreateModuleModal model: new Module(raw: {})
   toggleInspector: (event) ->
     _.defer =>
       target = $(event.target)
       toggled = target.hasClass 'active'
-      target.html if toggled then 'Inspector On' else 'Inspector Off'
+      target.html if toggled then 'Inspector is On' else 'Inspector is Off'
       @applicationWindow.setInspectorMode toggled
   template: """
     <div class="navbar-placeholder"></div>
@@ -268,8 +374,7 @@ Application.View.extend
   events:
     'click ul.dropdown-menu li a': editOrCreate
   context: (model) ->
-    if model.attributes.name isnt 'base'
-      routerUrl = thoraxConfig.attributes.paths.routers + '/' + model.attributes.name + '.js'
+    routerUrl = thoraxConfig.attributes.paths.routers + '/' + model.attributes.name + '.js'
     _.extend {}, model.attributes,
       routerUrl: routerUrl
   template: """
@@ -304,6 +409,13 @@ Application.View.extend
         <li class="nav-header">Libraries</li>
       {{/empty}}
       {{#collection lib tag="li"}}
+        <a href="{{raw.src}}">{{relative-path name "lib" raw.src}}</a>
+      {{/collection}}
+      {{^empty styles}}
+        <li class="divider"></li>
+        <li class="nav-header">Styles</li>
+      {{/empty}}
+      {{#collection styles tag="li"}}
         <a href="{{raw.src}}">{{relative-path name "lib" raw.src}}</a>
       {{/collection}}
       <li class="divider"></li>
@@ -349,10 +461,17 @@ Application.View.extend
     @getWindow().$('[data-view-cid]')[if active then 'on' else 'off'] 'click', @boundViewClicked
 
 EditRoutesModal = Application.View.extend
+  name: 'edit-routes-modal'
   events:
     'submit form': (event) ->
       @serialize event, (attributes, release) =>
-        console.log attributes
+        if attributes.route
+          routes = {}
+          _.each attributes.route, (route) ->
+            routes[route.path] = route.method
+          lumbarConfig.setRoutesForModule @model.attributes.name, routes
+          lumbarConfig.save()
+        @hide()
         release()
   hide: ->
     @$el.modal 'hide'
@@ -367,7 +486,9 @@ EditRoutesModal = Application.View.extend
     @model.attributes.routes.add new Application.Model route: '', method: ''
     @$('tbody > tr:last-child td:first-child input')[0].focus()
   removeRoute: (event) ->
-    $(event.target).parents('[data-model-cid]').attr('data-model-cid')
+    model = $(event.target).model()
+    collection = $(event.target).collection()
+    collection.remove model
   template: """
     <div class="modal">
       <form class="form-vertical">
@@ -385,22 +506,98 @@ EditRoutesModal = Application.View.extend
             </thead>
             {{#collection routes tag="tbody"}}
               <tr>
-                <td><input type="text" id="route-{{cid}}" name="route-{{cid}}" value="{{route}}"></td>
-                <td><input type="text" id="method-{{cid}}" name="method-{{cid}}" value="{{method}}"></td>
+                <td><input type="text" id="route-{{cid}}" name="route[{{cid}}][path]" value="{{route}}"></td>
+                <td><input type="text" id="method-{{cid}}" name="route[{{cid}}][method]" value="{{method}}"></td>
                 <td><button class="btn btn-danger btn-mini" data-call-method="removeRoute">Remove</button></td>
+              </tr>
+            {{else}}
+              <tr>
+                <td colspan="3">No Routes</td>
               </tr>
             {{/collection}}
           </table>
           <button class="btn btn-success" data-call-method="createRoute">Create Route</button>
         </div>
         <div class="modal-footer">
-          <input type="submit" class="btn btn-primary" data-dismiss="modal">
+          <input type="button" class="btn" data-dismiss="modal" value="Close">
+          <input type="submit" class="btn btn-primary" value="Save Changes">
         </div>
       </form>
     </div>
   """
 
-
+CreateModuleModal = Application.View.extend
+  name: 'create-module-modal'
+  events:
+    'submit form': (event) ->
+      @serialize event, (attributes, release) =>
+        if attributes.route
+          viewsToCreate = []
+          routes = {}
+          _.each attributes.route, (route) ->
+            routes[route.path] = route.method
+            if route['create-view'] and route['create-view'] is 'on'
+              viewsToCreate.push route.method
+        generator.createModule attributes.name, routes, viewsToCreate
+        @hide()
+        release()
+  hide: ->
+    @$el.modal 'hide'
+  show: ->
+    @$el.modal 'show'
+  initialize: ->
+    $('body').append @$el
+    @render()
+    @show()
+    @$el.on 'hidden', => @destroy()
+  createRoute: (event) ->
+    @model.attributes.routes.add new Application.Model route: '', method: ''
+    @$('tbody > tr:last-child td:first-child input')[0].focus()
+  removeRoute: (event) ->
+    model = $(event.target).model()
+    collection = $(event.target).collection()
+    collection.remove model
+  template: """
+    <div class="modal">
+      <form class="form-vertical">
+        <div class="modal-header">
+          <h3>Create Module</h3>
+        </div>
+        <div class="modal-body">
+          <label for="name-{{cid}}"><strong>Module Name</strong></label>
+          <input type="text" id="name-{{cid}}" name="name">
+          <br/><br/>
+          <table class="table table-bordered table-striped table-condensed">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Method</th>
+                <th>Create View?</th>
+                <th></th>
+              </tr>
+            </thead>
+            {{#collection routes tag="tbody"}}
+              <tr>
+                <td><input type="text" id="route-{{cid}}" name="route[{{cid}}][path]" value="{{route}}"></td>
+                <td><input type="text" id="method-{{cid}}" name="route[{{cid}}][method]" value="{{method}}"></td>
+                <td><input type="checkbox" id="create-view-{{cid}}" name="route[{{cid}}][create-view]" checked="checked"></td>
+                <td><button class="btn btn-danger btn-mini" data-call-method="removeRoute">Remove</button></td>
+              </tr>
+            {{else}}
+              <tr>
+                <td colspan="4">No Routes</td>
+              </tr>
+            {{/collection}}
+          </table>
+          <button class="btn btn-success" data-call-method="createRoute">Create Route</button>
+        </div>
+        <div class="modal-footer">
+          <input type="button" class="btn" data-dismiss="modal" value="Close">
+          <input type="submit" class="btn btn-primary" value="Create Module">
+        </div>
+      </form>
+    </div>
+  """
 
 CreateFileModal = Application.View.extend
   events: ->
@@ -428,7 +625,7 @@ CreateFileModal = Application.View.extend
     @render()
     @show()
     @$el.on 'hidden', => @destroy()
-    @$('input[type="text"]').focus()
+    @$('input[type="text"]').val(@module + '/').focus()
   hide: ->
     @$el.modal 'hide'
   show: ->

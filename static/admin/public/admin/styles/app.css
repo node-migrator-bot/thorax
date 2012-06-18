@@ -70,10 +70,6 @@ body > [data-layout-cid] {
   text-indent: 15px;
 }
 
-ul.nav > [data-module-name="base"] {
-  display: none;
-}
-
 .nav form {
   margin-bottom: 0;
 }
@@ -110,4 +106,14 @@ select.editor {
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+[data-view-name="create-module-modal"] td input[type="text"] {
+  width: 100px;
+}
+
+
+[data-view-name="create-module-modal"] input[type="text"],
+[data-view-name="edit-routes-modal"] input[type="text"] {
+  margin-bottom:0;
 }

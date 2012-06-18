@@ -71,7 +71,8 @@
           "src": "static/index.html",
           "dest": "index.html"
         }
-      ]
+      ],
+      "routes": {}
     }
   },
   "templates": {},

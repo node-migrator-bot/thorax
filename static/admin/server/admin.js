@@ -1,18 +1,21 @@
 module.exports = function(server, secureServer, argv) {
   if (argv.admin) {
     var path = require('path'),
-    _ = require('underscore'),
-    fs = require('fs'),
-    exec = require('child_process').exec,
-    pathPrefix = '/admin';
-    io = require('socket.io');
+        _ = require('underscore'),
+        fs = require('fs'),
+        exec = require('child_process').exec,
+        pathPrefix = '/admin',
+        io = require('socket.io'),
+        mkdirp = require('mkdirp');
 
     function readFile(file, callback) {
       fs.readFile(relativePath(file), callback);
     }
     
     function writeFile(file, contents, callback) {
-      fs.writeFile(relativePath(file), contents, callback);
+      mkdirp(path.dirname(file), function() {
+        fs.writeFile(relativePath(file), contents, callback);
+      });
     }
 
     function relativePath(filename) {
@@ -22,9 +25,7 @@ module.exports = function(server, secureServer, argv) {
     [
       //open file
       ['get', '/open', function(request, response) {
-        console.log('open!');
         var command = request.query.editor + ' ' + relativePath(request.query.path);
-        console.log(command);
         exec(command, function(){});
         response.send();
       }],
@@ -37,13 +38,11 @@ module.exports = function(server, secureServer, argv) {
       }],
       //write lumbar config
       ['post', '/lumbar.json', function(request, response) {
-        console.log(JSON.stringify(request.body, null, 2));
-        return response.send();
-        writeFile('lumbar.json', JSON.stringify(request.body, null, 2), function() {
+        var payload = JSON.parse(request.body.payload);
+        writeFile('lumbar.json', JSON.stringify(payload, null, 2), function() {
           response.send();
         });
       }],
-      //
       //read file
       ['get', '/file', function(request, response) {
         readFile(request.query.path, function(err, contents) {

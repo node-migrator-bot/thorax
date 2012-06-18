@@ -1,7 +1,7 @@
 {
   "modules": {
     "base": {
-      "files": [
+      "scripts": [
         {
           "src": "js/lib/thorax.loading.js"
         },
