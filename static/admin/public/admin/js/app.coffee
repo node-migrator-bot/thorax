@@ -162,18 +162,21 @@ generator = new Application.View
     lumbarConfig.save()
 
   createModule: (moduleName, routes, viewsToCreate) ->
-    routerOutput = @templates.router name: moduleName, methods: @generateRouterMethods moduleName, routes, viewsToCreate
-    @writeFile thoraxConfig.attributes.paths.routers + '/' + moduleName + '.js', routerOutput
-
     module = new Module(name: moduleName, raw: {})
     lumbarConfig.attributes.modules.add module
     
+    routerOutput = @templates.router name: moduleName, methods: @generateRouterMethods moduleName, routes, viewsToCreate
+    routerPath = thoraxConfig.attributes.paths.routers + '/' + moduleName + '.js'
+    @writeFile routerPath, routerOutput
+
     styleSheetPath = thoraxConfig.attributes.paths.styles + '/' + moduleName + '.styl'
     @writeFile styleSheetPath, ''
     module.attributes.styles.add new Application.Model(raw: {src: styleSheetPath})
 
     lumbarConfig.attributes.raw.modules[moduleName] = {
-      scripts: [],
+      scripts: [
+        {src: routerPath}
+      ],
       styles: [
         {src: styleSheetPath}
       ]
@@ -184,13 +187,12 @@ generator = new Application.View
       @createFile
         type: 'view'
         module: moduleName
-        name: viewToCreate
+        name: moduleName + '/' + viewToCreate
         'create-template': 'on'
 
     lumbarConfig.save()
 
   generateRouterMethods: (moduleName, routes, viewsToCreate) ->
-    console.log 'routes', routes
     methods = _.map routes, (method, path) ->
       signature = path.match(/\:[\w]+/g)?.map((item) -> item.replace(/\:/, '')).join(', ').replace(/\-/g, '_')
       method = if method.match(/\-/) then '"' + method + '"' else method
@@ -274,7 +276,6 @@ MainView = Application.View.extend
       value: value
       key: key
     @frame = new Application.Layout attributes: class: 'display-frame'
-
     Application.bind 'reload', =>
       if @applicationWindow and @frame.view is @applicationWindow
         @applicationWindow.reload()
@@ -293,8 +294,7 @@ MainView = Application.View.extend
       @editorView.edit()
   closeEditor: (event) ->
     event.preventDefault()
-    if confirm 'Close without saving?'
-      @openApplication()
+    @openApplication()
   saveEditor: (event) ->
     event.preventDefault()
     @editorView.save =>
@@ -315,7 +315,7 @@ MainView = Application.View.extend
           <div class="view-application">
             <div class="nav pull-right">
               <form class="form-inline">
-                <button class="btn btn-small" data-toggle="button" data-call-method="toggleInspector">Inspector Off</button>
+                <button class="btn btn-small" data-toggle="button" data-call-method="toggleInspector">Inspector is Off</button>
                 <button class="btn btn-primary btn-small" data-call-method="createModule">Create Module</button>
                 <label class="navbar-text">Open files with:</label>
                 <select class="editor">
@@ -374,7 +374,8 @@ Application.View.extend
   events:
     'click ul.dropdown-menu li a': editOrCreate
   context: (model) ->
-    routerUrl = thoraxConfig.attributes.paths.routers + '/' + model.attributes.name + '.js'
+    if model.attributes.name isnt 'base'
+      routerUrl = thoraxConfig.attributes.paths.routers + '/' + model.attributes.name + '.js'
     _.extend {}, model.attributes,
       routerUrl: routerUrl
   template: """
@@ -441,6 +442,8 @@ Application.View.extend
     {{/empty}}
   """
 
+inspectorIsVisible = false
+
 Application.View.extend
   tagName: 'iframe'
   attributes:
@@ -453,12 +456,86 @@ Application.View.extend
     @getWindow().location.reload()
   navigate: (url, options) ->
     @getWindow().Backbone.history.navigate url, options
+    #hack, need to get live() to work on iframe window
+    currentMode = @inspectorActive
+    setTimeout =>
+      @setInspectorMode !currentMode
+      @setInspectorMode currentMode
+    , 1500
   initialize: ->
-    @boundViewClicked = _.bind @viewClicked, @
-  viewClicked: (event) ->
-    console.log '!'
+    @boundViewClick = _.bind @viewClick, @
+  viewClick: (event) ->
+    console.log 'inspectorIsVisible',inspectorIsVisible
+    if !inspectorIsVisible
+      new InspectorModal target: $(event.target)
   setInspectorMode: (active) ->
-    @getWindow().$('[data-view-cid]')[if active then 'on' else 'off'] 'click', @boundViewClicked
+    @inspectorActive = active
+    el = @getWindow().$('[data-view-cid]')
+    el[if active then 'on' else 'off'] 'click', @boundViewClick
+
+InspectorModal = Application.View.extend
+  name: 'inspector-popover'
+  events:
+    destroyed: ->
+      inspectorIsVisible = false
+  hide: ->
+    inspectorIsVisible = false
+    @$el.modal 'hide'
+  show: ->
+    inspectorIsVisible = true
+    @$el.modal backdrop: false
+    @$el.modal 'show'
+  initialize: ->
+    $('body').append @$el
+    @closestView = @target.closest('[data-view-name]').attr('data-view-name')
+    @closestModel = @target.closest('[data-model-name]').attr('data-model-name')
+    @closestCollection = @target.closest('[data-collection-name]').attr('data-collection-name')
+    if @closestView
+      templates = lumbarConfig.attributes.raw.templates[thoraxConfig.attributes.paths.views + '/' + @closestView + '.js']
+      templatePath = thoraxConfig.attributes.paths.templates + '/' + @closestView + '.handlebars'
+      if templates.indexOf templatePath isnt -1
+        @closestTemplate = @closestView
+    @render()
+    @show()
+    @$el.on 'hidden', => @destroy()
+  editTemplate: ->
+    filePath = thoraxConfig.attributes.paths.templates + '/' + @closestTemplate + '.handlebars'
+    openFile filePath
+    @hide()
+  editView: ->
+    filePath = thoraxConfig.attributes.paths.views + '/' + @closestView + '.js'
+    openFile filePath
+    @hide()
+  editModel: ->
+    openFile thoraxConfig.attributes.paths.models + '/' + @closestModel + '.js'
+    @hide()
+  editCollection: ->
+    openFile thoraxConfig.attributes.paths.models + '/' + @closestCollection + '.js'
+    @hide()
+  template: """
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Inspector</h3>
+      </div>
+      <div class="modal-body">
+        {{#if closestView}}
+          <p><strong>View:</strong> {{closestView}} <button class="btn" data-call-method="editView">Edit</button></p>
+        {{/if}}
+        {{#if closestTemplate}}
+          <p><strong>Template:</strong> {{closestTemplate}} <button class="btn" data-call-method="editTemplate">Edit</button></p>
+        {{/if}}
+        {{#if closestModel}}
+          <p><strong>Model:</strong> {{closestModel}} <button class="btn" data-call-method="editModel">Edit</button></p>
+        {{/if}}
+        {{#if closestCollection}}
+          <p><strong>Collection:</strong> {{closestCollection}} <button class="btn" data-call-method="editCollection">Edit</button></p>
+        {{/if}}
+      </div>
+      <div class="modal-footer">
+        <input type="submit" class="btn btn-primary" data-dismiss="modal" value="Close">
+      </div>
+    </div>
+  """
 
 EditRoutesModal = Application.View.extend
   name: 'edit-routes-modal'
@@ -489,6 +566,10 @@ EditRoutesModal = Application.View.extend
     model = $(event.target).model()
     collection = $(event.target).collection()
     collection.remove model
+  visitRoute: (event) ->
+    route = $(event.target).model().attributes.route
+    mainView.applicationWindow?.navigate route, trigger: true
+    @hide()
   template: """
     <div class="modal">
       <form class="form-vertical">
@@ -502,17 +583,19 @@ EditRoutesModal = Application.View.extend
                 <th>Route</th>
                 <th>Method</th>
                 <th></th>
+                <th></th>
               </tr>
             </thead>
             {{#collection routes tag="tbody"}}
               <tr>
                 <td><input type="text" id="route-{{cid}}" name="route[{{cid}}][path]" value="{{route}}"></td>
                 <td><input type="text" id="method-{{cid}}" name="route[{{cid}}][method]" value="{{method}}"></td>
+                <td><button class="btn btn-mini" data-call-method="visitRoute">Visit</button></td>
                 <td><button class="btn btn-danger btn-mini" data-call-method="removeRoute">Remove</button></td>
               </tr>
             {{else}}
               <tr>
-                <td colspan="3">No Routes</td>
+                <td colspan="4">No Routes</td>
               </tr>
             {{/collection}}
           </table>
@@ -666,3 +749,4 @@ $ ->
     Application.setView mainView
     $('body').append Application.el
     mainView.openApplication()
+    Application.start()
