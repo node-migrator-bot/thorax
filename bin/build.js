@@ -35,16 +35,16 @@ function buildPackage(name, target, complete) {
       lumbarJSONByTarget[lumbarJSONLocation] = lumbarJSONByTarget[lumbarJSONLocation] || {};
       packageJSONByTarget[pacakgeJSONLocation] = packageJSONByTarget[pacakgeJSONLocation] || {};
   function buildFiles() {
-    var directives = _.map(build.files, function(targetPath, sourcePath) {
+    var directives = _.map(build.directories, function(targetPath, sourcePath) {
       return {
-        isFile: true,
+        isFile: false,
         targetPath: targetPath,
         sourcePath: sourcePath
       };
     });
-    directives = directives.concat(_.map(build.directories, function(targetPath, sourcePath) {
+    directives = directives.concat(_.map(build.files, function(targetPath, sourcePath) {
       return {
-        isFile: false,
+        isFile: true,
         targetPath: targetPath,
         sourcePath: sourcePath
       };
