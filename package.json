@@ -52,6 +52,7 @@
       "directories": {
         "static/bootstrap": "",
         "static/loading": "",
+        "static/form": "",
         "static/admin": "",
         "lib": "public/admin/js/lib"
       }
@@ -62,7 +63,8 @@
         "lib": "js/lib"
       },
       "files": {
-        "static/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js"
+        "static/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js",
+        "static/form/js/lib/thorax.form.js": "js/lib/thorax.form.js"
       }
     }
   }
