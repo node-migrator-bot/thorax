@@ -340,9 +340,15 @@ _.extend(Thorax.View.prototype, {
       exports.trigger(loadStart, message, background, object);
     }
     $(this.el).addClass(this._loadingClassName);
+    if (this._renderOnLoadStart) {
+      this.render();
+    }
   },
   onLoadEnd: function(background, object) {
     $(this.el).removeClass(this._loadingClassName);
+    if (this._renderOnLoadEnd) {
+      this.render();
+    }
   }
 });
 
@@ -367,31 +373,56 @@ Thorax.View.registerEvents({
   }
 });
 
-//Thorax.View.registerHelper('loading', function(collectionOrModel, options) {
-//  if (arguments.length === 1) {
-//    options = collectionOrModel;
-//    collectionOrModel = false;
-//  }
-//  var view = this._view;
-//  view._renderOnLoadStart = true;
-//  view._renderOnLoadEnd = true;
-//  if ($(this.el).hasClass(this._loadingClassName)) {
-//    return options.fn(this);
-//  } else {
-//    return options.inverse(this);
-//  }
-//});
+Thorax.View.registerHelper('loading', function(collectionOrModel, options) {
+  if (arguments.length === 1) {
+    options = collectionOrModel;
+    collectionOrModel = false;
+  }
+  var view = this._view;
+  view._renderOnLoadStart = true;
+  view._renderOnLoadEnd = true;
+  if ($(this.el).hasClass(this._loadingClassName)) {
+    return options.fn(this);
+  } else {
+    return options.inverse(this);
+  }
+});
 
-//var oldCollectionHelper = Handlebars.helpers.collection;
-//Thorax.View.collection = Handlebars.helpers.collection = function(collection, options) {
-//  if (arguments.length === 1) {
-//    options = collection;
-//    collection = this._view.collection;
-//  }
-//  if (options['loading-view'] || options['loading-template']) {
-//    
-//  }
-//  return oldCollectionHelper.call(this, collection, options);
-//};
+var oldCollectionHelper = Handlebars.helpers.collection;
+Thorax.View.collection = Handlebars.helpers.collection = function(collection, options) {
+  if (arguments.length === 1) {
+    options = collection;
+    collection = this._view.collection;
+  }
+  if (options.hash['loading-view'] || options.hash['loading-template']) {
+    var item, collectionElement;
+    collection.bind(loadStart, Thorax.loadHandler(_.bind(function() {
+      collectionElement = this._view._getCollectionElement(collection);
+      if (collection.length === 0) {
+        collectionElement.empty();
+      }
+      if (options.hash['loading-view']) {
+        var view = this.view(options.hash['loading-view'], this);
+        view.render(options.hash['loading-template']);
+        item = view;
+      } else {
+        item = this.template(options.hash['loading-template'], this);
+      }
+      this._view.appendItem(collection, item, collection.length, {
+        collectionElement: collectionElement
+      });
+      collectionElement.children().last().attr('data-loading-element', collection.cid);
+    }, this), _.bind(function() {
+      collectionElement = collectionElement || this._view._getCollectionElement(collection);
+      collectionElement.find('[data-loading-element="' + collection.cid + '"]').remove();
+    }, this)));
+  }
+  var clonedOptionsHash = _.clone(options.hash);
+  delete clonedOptionsHash['loading-view'];
+  delete clonedOptionsHash['loading-template'];
+  var clonedOptions = _.clone(options);
+  clonedOptions.hash = clonedOptionsHash;
+  return oldCollectionHelper.call(this, collection, clonedOptions);
+};
 
 })();

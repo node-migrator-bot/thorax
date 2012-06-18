@@ -609,39 +609,46 @@ $(function(){
   });
 
   test("loading-template and loading-view collection helper options", function() {
-    ok(true);
-    return;
-    //this.xhr = sinon.useFakeXMLHttpRequest();
-    var requests = this.requests = [];
-
-    this.xhr.onCreate = function (xhr) {
-      console.log('onCreate')
-      requests.push(xhr);
-    };
-
-    Application.templates['collection-loading'] = Handlebars.compile('<li class="loading-item">loading</li>');
-    Application.templates['collection-loading-view'] = Handlebars.compile('loading');
+    //use low level events as flusheQueue / fetchQueue interferes
+    Application.templates['collection-loading.handlebars'] = Handlebars.compile('<li class="loading-item">loading</li>');
+    Application.templates['collection-loading-view.handlebars'] = Handlebars.compile('loading');
     Application.View.extend({
       name: 'collection-loading-view',
       tagName: 'li'
     });
     var collectionLoadingTemplateView = new Application.View({
-      template: '{{#collection loading-template="collection-loading" tag="ul"}}<li class="item">item</li>{{else}}<li class="empty-item">empty</li>{{/collection}}',
+      template: '{{#collection loading-template="collection-loading" tag="ul"}}<li class="item">{{number}}</li>{{else}}<li class="empty-item">empty</li>{{/collection}}',
       collection: new (Application.Collection.extend({
-        url: 'mock'
+        url: false
       }))
     });
-    equal(collectionLoadingTemplateView.$('li').length, 0);
-    requests[0].respond(200, { "Content-Type": "application/json" },'[]');
+    collectionLoadingTemplateView.render();
+    equal(collectionLoadingTemplateView.$('li').length, 1);
+    equal(collectionLoadingTemplateView.$('li.empty-item').length, 1);
 
-
-    //var collectionLoadingViewView = new Application.View({
-    //  template: '{{#collection loading-view="collection-loading-view" tag="ul"}}<li class="item">item</li>{{else}}<li class="empty-item">empty</li>{{/collection}}',
-    //  collection: new (Application.Collection.extend({
-    //    url: 'mock'
-    //  }))
-    //});
-
-    //this.xhr.restore();
+    collectionLoadingTemplateView.collection.loadStart();
+    this.clock.tick(loadStartTimeout);
+    equal(collectionLoadingTemplateView.$('li').length, 1);
+    equal(collectionLoadingTemplateView.$('li.empty-item').length, 0);
+    equal(collectionLoadingTemplateView.$('li.loading-item').length, 1);
+    collectionLoadingTemplateView.collection.add([{"number":"one"},{"number":"two"}]);
+    collectionLoadingTemplateView.collection.loadEnd();
+    this.clock.tick(loadEndTimeout);
+    equal(collectionLoadingTemplateView.$('li').length, 2);
+    equal(collectionLoadingTemplateView.$('li.empty-item').length, 0);
+    equal(collectionLoadingTemplateView.$('li.loading-item').length, 0);
+    
+    collectionLoadingTemplateView.collection.loadStart();
+    this.clock.tick(loadStartTimeout);
+    equal(collectionLoadingTemplateView.$('li').length, 3);
+    equal(collectionLoadingTemplateView.$('li.empty-item').length, 0);
+    equal(collectionLoadingTemplateView.$('li.loading-item').length, 1);
+    ok($(collectionLoadingTemplateView.$('li')[2]).hasClass('loading-item'));
+    collectionLoadingTemplateView.collection.add([{"number":"three"},{"number":"four"}]);
+    collectionLoadingTemplateView.collection.loadEnd();
+    this.clock.tick(loadEndTimeout);
+    equal(collectionLoadingTemplateView.$('li').length, 4);
+    equal(collectionLoadingTemplateView.$('li.empty-item').length, 0);
+    equal(collectionLoadingTemplateView.$('li.loading-item').length, 0);
   });
 });
