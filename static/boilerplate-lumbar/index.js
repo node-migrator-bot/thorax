@@ -4,17 +4,16 @@ var childProcess = require('child_process'),
   fs = require('fs'),
   path = require('path'),
   port = process.env.PORT,
-  execute = function(commands, callback) {
-    console.log(commands.join("\n"));
-    exec(commands.join(";"), function(error, stdout, stderr) {
-      if (stdout) {
-        console.log(stdout);
-      }
-      if (stderr) {
-        console.log(stderr);
-      }
-      callback && callback();
+  execute = function(command, args, callback) {
+    console.log(command + ' ' + args.join(' '));
+    var command = spawn(command, args);
+    command.stdout.on('data', function (data) {
+      process.stdout.write(data);
     });
+    command.stderr.on('data', function (data) {
+      process.stderr.write(data);
+    });
+    command.on('exit', callback || function(){});
   },
   startServer = function() {
     var express = require('express'),
@@ -65,7 +64,7 @@ var childProcess = require('child_process'),
   };
 
 if (!path.existsSync(path.join(__dirname, 'node_modules'))) {
-  execute(['npm install'], startServer);
+  execute('npm',['install'], startServer);
 } else {
   startServer();
 }
