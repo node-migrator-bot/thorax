@@ -1,0 +1,17 @@
+{
+  "modules": {
+    "base": {
+      "scripts": [
+        {
+          "src": "js/lib/thorax.form.js"
+        },
+        {
+          "src": "js/lib/thorax.form-helpers.js"
+        },
+        {
+          "src": "js/lib/thorax.validations.js"
+        }
+      ]
+    }
+  }
+}
