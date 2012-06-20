@@ -779,16 +779,16 @@ $(function() {
       bEventCounter[eventName] || (bEventCounter[eventName] = 0);
       ++bEventCounter[eventName];
     });
-  
-    ok(!Application.view, 'layout does not start with a view');
+
+    ok(!Application.getView(), 'layout does not start with a view');
   
     Application.setView(a);
-    equal(Application.view, a, 'layout sets view');
+    equal(Application.getView(), a, 'layout sets view');
     ok(Application.$('[data-view-name]').length, 'layout updates HTML')
   
     b.render();
     Application.setView(b);
-    equal(Application.view, b, 'layout sets view');
+    equal(Application.getView(), b, 'layout sets view');
   
     //lifecycle checks
     equal(aEventCounter.rendered, 1);
@@ -804,7 +804,7 @@ $(function() {
     ok(!bEventCounter.destroyed);
 
     Application.setView(false);
-    ok(!Application.view, 'layout can set to empty view');
+    ok(!Application.getView(), 'layout can set to empty view');
     equal(bEventCounter.rendered, 1);
     equal(bEventCounter.activated, 1);
     equal(bEventCounter.ready, 1);
@@ -851,6 +851,25 @@ $(function() {
     $(innerLink).trigger(click);
     equal(callCount, 2);
     document.body.removeChild(application.el);
+  });
+
+  test('layouts with tempaltes and {{layout}}', function() {
+    var layoutWithTemplate = new Application.Layout({
+      template: '<div class="outer">{{layout}}</div>'
+    });
+    layoutWithTemplate.setView(new Application.View({
+      template: '<div class="inner"></div>'
+    }));
+    equal(layoutWithTemplate.$('.outer').length, 1);
+    equal(layoutWithTemplate.$('.inner').length, 1);
+    var layoutWithTemplateWithoutLayoutTag = new Application.Layout({
+      template: '<div class="outer"></div>'
+    });
+    raises(function() {
+      layoutWithTemplateWithoutLayoutTag.setView(new Application.View({
+        template: '<div class="inner"></div>'
+      }));
+    });
   });
 
   test("$.fn.view, $.fn.model, $.fn.collection", function() {
