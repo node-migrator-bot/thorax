@@ -51,4 +51,56 @@ $(function() {
     ok(!view.serialize());
     equal(errorCallbackCallCount, 1, "error event triggered when validateInput returned errors");
   });
+
+  test("test validations", function() {
+    var lastErrors;
+
+    var regexValidationViewErrorCount = 0;
+    var regexValidationView = new Application.View({
+      events: {
+        error: function(errors) {
+          ++regexValidationViewErrorCount;
+          lastErrors = errors;
+        }
+      },
+      template: '<form><input name="a" data-validate-regex="^a"></form>'
+    });
+    regexValidationView.render();
+    regexValidationView.populate({
+      a: 'a'
+    });
+    equal(regexValidationView.serialize().a, 'a');
+    equal(regexValidationViewErrorCount, 0);
+    regexValidationView.populate({
+      a: 'b'
+    });
+    ok(!regexValidationView.serialize());
+    equal(regexValidationViewErrorCount, 1);
+    equal(lastErrors[0].label, 'a');
+
+    var methodValidationView = new Application.View({
+      events: {
+        error: function(errors) {
+          lastErrors = errors;
+        }
+      },
+      template: '<form><label for="a">label<input id="a" name="a" data-validate-method="myMethod"></label></form>',
+      myMethod: function(value) {
+        return value !== 'a' ? 'test {{label}}' : true;
+      }
+    });
+    methodValidationView.render();
+    methodValidationView.populate({
+      a: 'a'
+    });
+    ok(methodValidationView.serialize());
+    methodValidationView.populate({
+      a: 'b'
+    ok(!methodValidationView.serialize());
+    equal(lastErrors[0].message, 'test label');
+    methodValidationView.populate({
+      a: 'a'
+    });
+    ok(methodValidationView.serialize());
+  });
 });
