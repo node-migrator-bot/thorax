@@ -5,7 +5,7 @@ $(function() {
   test("serialize() / populate()", function() {
     var FormView = Application.View.extend({
       name: 'form',
-      template: '<form><input name="one"/><select name="two"><option value="a">a</option><option value="b">b</option></select><input name="three[four]"/></form>'
+      template: Handlebars.compile('<form><input name="one"/><select name="two"><option value="a">a</option><option value="b">b</option></select><input name="three[four]"/><input name="five" value="A" type="checkbox" /><input name="five" value="B" type="checkbox" checked /><input name="five" value="C" type="checkbox" checked /><input name="six" value="LOL" type="checkbox" checked /></form>')
     });
   
     var model = new Application.Model({
@@ -20,6 +20,8 @@ $(function() {
     view.render();
     var attributes = view.serialize();
     equal(attributes.one, "", 'serialize empty attributes');
+    deepEqual(attributes.five, ['B', 'C'], 'serialize empty attributes');
+    equal(attributes.six, 'LOL', 'serialize empty attributes');
     view.setModel(model);
 
     attributes = view.serialize();
@@ -96,6 +98,7 @@ $(function() {
     ok(methodValidationView.serialize());
     methodValidationView.populate({
       a: 'b'
+    });
     ok(!methodValidationView.serialize());
     equal(lastErrors[0].message, 'test label');
     methodValidationView.populate({
