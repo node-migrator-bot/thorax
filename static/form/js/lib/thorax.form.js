@@ -34,8 +34,10 @@
       var attributes = options.attributes || {};
       
       //callback has context of element
+      var view = this;
+      var errors = [];
       eachNamedInput.call(this, options, function() {
-        var value = getInputValue.call(this);
+        var value = view._getInputValue(this, options, errors);
         if (typeof value !== 'undefined') {
           objectAndKeyFromAttributesAndName.call(this, attributes, this.name, {mode: 'serialize'}, function(object, key) {
             object[key] = value;
@@ -43,11 +45,14 @@
         }
       });
   
-      this.trigger('serialize', attributes);
+      this.trigger('serialize', attributes, options);
 
       if (options.validate) {
-        var errors = this.validateInput(attributes) || [];
-        this.trigger('validate', attributes, errors);
+        var validateInputErrors = this.validateInput(attributes);
+        if (validateInputErrors && validateInputErrors.length) {
+          errors = errors.concat(validateInputErrors);
+        }
+        this.trigger('validate', attributes, errors, options);
         if (errors.length) {
           this.trigger('error', errors);
           return;
@@ -128,7 +133,25 @@
     },
 
     //perform form validation, implemented by child class
-    validateInput: function() {}
+    validateInput: function(attributes, options, errors) {},
+
+    _getInputValue: function(input, options, errors) {
+      if (input.type === 'checkbox' || input.type === 'radio') {
+        if (input.checked) {
+          return input.value;
+        }
+      } else if (input.multiple === true) {
+        var values = [];
+        $('option',input).each(function(){
+          if (this.selected) {
+            values.push(this.value);
+          }
+        });
+        return values;
+      } else {
+        return input.value;
+      }
+    }
   });
 
   Thorax.View.registerEvents({
@@ -179,27 +202,6 @@
 
   function resetSubmitState() {
     this.$('form').removeAttr('data-submit-wait');
-  }
-
-  //called with context of input
-  function getInputValue() {
-    if (this.type === 'checkbox' || this.type === 'radio') {
-      if ($(this).attr('data-onOff')) {
-        return this.checked;
-      } else if (this.checked) {
-        return this.value;
-      }
-    } else if (this.multiple === true) {
-      var values = [];
-      $('option',this).each(function(){
-        if (this.selected) {
-          values.push(this.value);
-        }
-      });
-      return values;
-    } else {
-      return this.value;
-    }
   }
 
 })();
