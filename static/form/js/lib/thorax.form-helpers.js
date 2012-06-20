@@ -95,10 +95,10 @@ function attributeError() {
 
 }
 
-  options.hash.type = options.hash.type || 'text';
-  options.hash.id = options.hash.id ? expandToken(options.hash.id, scope) : _.uniqueId('txt');
+//  options.hash.type = options.hash.type || 'text';
+//  options.hash.id = options.hash.id ? expandToken(options.hash.id, scope) : _.uniqueId('txt');
 
-Handlebars.escapeExpression
+//Handlebars.escapeExpression
 //Thorax.View.reigsterHelper('control-group', function(options) {
 //  var id = 'input-' + this.cid,
 //      label = options.hash.label,
@@ -126,6 +126,7 @@ Handlebars.escapeExpression
 //      </div>
 //    </div>
 //
+/*
 function resetErrorState() {
   this.$('[' + errorAttributeName ']').hide();
   this.$('[' + inputErrorAttributeName + ']').html().hide();
@@ -143,3 +144,4 @@ Thorax.View.registerEvents({
     }, this);
   }
 });
+*/
