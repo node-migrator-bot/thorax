@@ -60,6 +60,15 @@
         "lib": "public/admin/js/lib"
       }
     },
+    "docs": {
+      "builds": ["boilerplate-lumbar"],
+      "directories": {
+        "static/bootstrap": "",
+        "static/loading": "",
+        "static/form": "",
+        "static/docs": ""
+      }
+    },
     "test": {
       "directories": {
         "static/test": "",

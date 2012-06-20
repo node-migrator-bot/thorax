@@ -1,0 +1,59 @@
+{
+  "modules": {
+    "docs": {
+      "routes": {
+        "": "index",
+        "start": "start",
+        "loading": "loading",
+        "form": "form",
+        "mobile": "mobile",
+        "examples": "examples"
+      },
+      "scripts": [
+        {
+          "src": "js/views/docs/index.js"
+        },
+        {
+          "src": "js/views/docs/start.js"
+        },
+        {
+          "src": "js/views/docs/loading.js"
+        },
+        {
+          "src": "js/views/docs/form.js"
+        },
+        {
+          "src": "js/views/docs/mobile.js"
+        },
+        {
+          "src": "js/views/docs/examples.js"
+        }
+      ],
+      "styles": [
+        {
+          "src": "styles/docs.styl"
+        }
+      ]
+    }
+  },
+  "templates": {
+    "js/views/docs/index.js": [
+      "templates/docs/index.handlebars"
+    ],
+    "js/views/docs/start.js": [
+      "templates/docs/start.handlebars"
+    ],
+    "js/views/docs/loading.js": [
+      "templates/docs/loading.handlebars"
+    ],
+    "js/views/docs/form.js": [
+      "templates/docs/form.handlebars"
+    ],
+    "js/views/docs/mobile.js": [
+      "templates/docs/mobile.handlebars"
+    ],
+    "js/views/docs/examples.js": [
+      "templates/docs/examples.handlebars"
+    ]
+  }
+}
