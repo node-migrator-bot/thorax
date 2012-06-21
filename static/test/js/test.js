@@ -927,11 +927,11 @@ $(function() {
       template: '<div class="outer">{{layout}}</div>'
     });
     c.render();
-    Backbone.history.navigate('one', {replace: true, trigger: true});
+    Backbone.history.navigate('one', {replace: false, trigger: true});
     equal(c.$('.outer').length, 1);
     equal(c.$('.one').length, 1);
     equal(c.$('.two').length, 0);
-    Backbone.history.navigate('two', {replace: true, trigger: true});
+    Backbone.history.navigate('two', {replace: false, trigger: true});
     equal(c.$('.one').length, 0);
     equal(c.$('.two').length, 1);
   });

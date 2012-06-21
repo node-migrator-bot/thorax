@@ -106,4 +106,22 @@ $(function() {
     });
     ok(methodValidationView.serialize());
   });
+
+  test("error helper", function() {
+    var errorHelperView = new Application.View({
+      template: '{{#error}}<p class="error-header">Some Errors</p><ul class="error-messages">{{#each errors}}<li>{{message}}</li>{{/each}}{{/error}}<form><input name="test" data-validate-required="true"></form>'
+    });
+    errorHelperView.render();
+    equal(errorHelperView.$('.error-header').length, 0);
+    ok(!errorHelperView.serialize());
+    equal(errorHelperView.$('.error-header').length, 1);
+    equal(errorHelperView.$('ul.error-messages li').length, 1);
+    ok(!errorHelperView.serialize());
+    equal(errorHelperView.$('.error-header').length, 1);
+    equal(errorHelperView.$('ul.error-messages li').length, 1);
+    errorHelperView.populate({test:'value'});
+    ok(errorHelperView.serialize());
+    equal(errorHelperView.$('.error-header').length, 0);
+    equal(errorHelperView.$('ul.error-messages li').length, 0);
+  });
 });
