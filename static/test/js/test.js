@@ -860,6 +860,8 @@ $(function() {
     layoutWithTemplate.setView(new Application.View({
       template: '<div class="inner"></div>'
     }));
+    ok(!$(layoutWithTemplate.el).attr('data-layout-cid'));
+    equal(layoutWithTemplate.$('[data-layout-cid]').length, 1);
     equal(layoutWithTemplate.$('.outer').length, 1);
     equal(layoutWithTemplate.$('.inner').length, 1);
     var layoutWithTemplateWithoutLayoutTag = new Application.Layout({
@@ -870,6 +872,30 @@ $(function() {
         template: '<div class="inner"></div>'
       }));
     });
+  });
+
+  test('ViewController', function() {
+    var c = new Application.ViewController({
+      routes: {
+        'one': 'one',
+        'two': 'two'
+      },
+      one: function() {
+        this.setView(new Application.View({template:'<div class="one">one</div>'}))
+      },
+      two: function() {
+        this.setView(new Application.View({template:'<div class="two">two</div>'}))
+      },
+      template: '<div class="outer">{{layout}}</div>'
+    });
+    c.render();
+    Backbone.history.navigate('one', {replace: true, trigger: true});
+    equal(c.$('.outer').length, 1);
+    equal(c.$('.one').length, 1);
+    equal(c.$('.two').length, 0);
+    Backbone.history.navigate('two', {replace: true, trigger: true});
+    equal(c.$('.one').length, 0);
+    equal(c.$('.two').length, 1);
   });
 
   test("$.fn.view, $.fn.model, $.fn.collection", function() {
