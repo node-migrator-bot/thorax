@@ -152,43 +152,4 @@ data-validate-integer
     return $input.attr('name');
   }
 
-  Thorax.View.expandToken = function(input, scope) {
-    if (input && input.indexOf && input.indexOf('{{') >= 0) {
-      var re = /(?:\{?[^{]+)|(?:\{\{([^}]+)\}\})/g,
-          match,
-          ret = [];
-      function deref(token, scope) {
-        var segments = token.split('.'),
-            len = segments.length;
-        for (var i = 0; scope && i < len; i++) {
-          if (segments[i] !== 'this') {
-            scope = scope[segments[i]];
-          }
-        }
-        return scope;
-      }
-      while (match = re.exec(input)) {
-        if (match[1]) {
-          var params = match[1].split(/\s+/);
-          if (params.length > 1) {
-            var helper = params.shift();
-            params = params.map(function(param) { return deref(param, scope); });
-            if (Handlebars.helpers[helper]) {
-              ret.push(Handlebars.helpers[helper].apply(scope, params));
-            } else {
-              // If the helper is not defined do nothing
-              ret.push(match[0]);
-            }
-          } else {
-            ret.push(deref(params[0], scope));
-          }
-        } else {
-          ret.push(match[0]);
-        }
-      }
-      input = ret.join('');
-    }
-    return input;
-  };
-
 })();
