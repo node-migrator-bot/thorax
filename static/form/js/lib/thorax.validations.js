@@ -1,22 +1,7 @@
 /*
+
 based on https://github.com/rickharrison/validate.js
 
-data-error-message
-data-validate-regex
-data-validate-method (calls method)
-data-validate-empty
-data-validate-email
-data-validate-matches
-data-validate-length
-data-validate-min-length
-data-validate-max-length
-data-validate-min
-data-validate-max
-data-validate-alpha
-data-validate-alpha-numeric
-data-validate-alpha-numeric-dash
-data-validate-numeric
-data-validate-integer
 */
 (function(){
   var validationAttributeNamePrefix = 'data-validate-',
