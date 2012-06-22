@@ -50,6 +50,7 @@ Thorax.View.registerHelper('input', function(options) {
     };
     delete options.hash.label;
   }
+
   inputErrorMessageGenerator = function(generatorOptions) {
     var inputErrorMessageOptions = {
       tag: 'p',
@@ -89,6 +90,8 @@ Thorax.View.registerHelper('input', function(options) {
     delete options.hash.type;
     delete options.hash.options;
     delete options.hash.selected;
+  } else if (!options.hash.type) {
+    options.hash.type = 'text';
   }
   inputGenerator = function(generatorOptions) {
     var output = Thorax.View.tag(_.extend({}, options.hash, generatorOptions ? generatorOptions.hash : {}), content, this);
