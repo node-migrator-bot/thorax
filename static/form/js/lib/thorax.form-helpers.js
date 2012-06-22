@@ -1,40 +1,3 @@
-/*
-
-TODO:
-
-- input
-- error
-- attribute-error
-- label
-- control-group
-
-{{#control-group}}
-  {{label}}
-  {{attribute-error}}
-  {{input}}
-{{/control-group}}
-
-
-FormView = new Application.View
-  events:
-    'submit form': (event) ->
-      @serialize event, (attributes, release) ->
-        @$('form').append '<div></div>'
-  template: """
-    <form class="form-vertical">
-      {{#error}}{{errors}}{{/error}}
-      <fieldset>
-        {{}}
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Save changes</button>
-          <button class="btn">Cancel</button>
-        </div>
-      </fieldset>
-    </form>
-  """
-
-*/
-
 var errorClassName = 'error',
     errorAttributeName = 'data-view-error',
     inputErrorAttributeName = 'data-input-error-id';
@@ -57,6 +20,7 @@ Thorax.View.registerHelper('error', function(options) {
 });
 
 Thorax.View.registerHelper('input-error', function(forInputId, options) {
+  options.hash.tag = options.hash.tag || 'span';
   options.hash['class'] = options.hash['class'] || 'help-inline';
   options.hash[inputErrorAttributeName] = forInputId;
   return new Handlebars.SafeString(Thorax.View.tag(options.hash));
@@ -184,6 +148,15 @@ function resetErrorState() {
   this.$('[' + inputErrorAttributeName + ']').empty().hide();
   this.$('.control-group.' + errorClassName).removeClass(errorClassName);
 }
+
+_.extend(Thorax.View.prototype, {
+  reset: function() {
+    _.each(this.$('form'), function(form) {
+      form.reset();
+    });
+    resetErrorState.call(this);
+  }
+});
 
 Thorax.View.registerEvents({
   rendered: resetErrorState,

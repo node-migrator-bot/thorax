@@ -139,7 +139,27 @@ $(function() {
   });
 
   test('input-error helper', function() {
-    
+    var inputErrorView = new Application.View({
+      template: '{{input-error "a"}}{{input-error "b" tag="p" class="help-block"}}'
+    });
+    inputErrorView.render();
+    equal(inputErrorView.$('span').length, 1);
+    equal(inputErrorView.$('p').length, 1);
+    inputErrorView.trigger('error', [
+      {
+        id: 'a',
+        message: 'message one'
+      },
+      {
+        id: 'b',
+        message: 'message two'
+      }
+    ]);
+    equal(inputErrorView.$('span').html(), 'message one');
+    equal(inputErrorView.$('p').html(), 'message two');
+    inputErrorView.reset();
+    equal(inputErrorView.$('span').html(), '');
+    equal(inputErrorView.$('p').html(), '');
   });
 
   test("control-group helper", function() {
