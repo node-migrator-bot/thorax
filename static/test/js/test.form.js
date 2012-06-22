@@ -217,7 +217,6 @@ $(function() {
       b: ''
     });
     ok(!formView.serialize());
-    console.log(formView.html());
     ok($(formView.$('.help-block')[0]).html() !== '');
     ok($(formView.$('.help-block')[1]).html() === 'too short');
   });
