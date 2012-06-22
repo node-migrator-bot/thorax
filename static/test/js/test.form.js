@@ -54,7 +54,7 @@ $(function() {
     equal(errorCallbackCallCount, 1, "error event triggered when validateInput returned errors");
   });
 
-  test("test validations", function() {
+  test("validations", function() {
     var lastErrors;
 
     var regexValidationViewErrorCount = 0;
@@ -105,6 +105,45 @@ $(function() {
       a: 'a'
     });
     ok(methodValidationView.serialize());
+  });
+
+  test("input helper", function(){
+    var textInputView = new Application.View({
+      key: 'value',
+      template: '{{input type="text" class="test" value="{{key}}"}}'
+    });
+    textInputView.render();
+    equal(textInputView.$('.test').val(), 'value');
+
+    var textareaInputView = new Application.View({
+      template: '{{input type="textarea" value="value"}}'
+    });
+    textareaInputView.render();
+    equal(textareaInputView.$('textarea').val(), 'value');
+
+    var selectView = new Application.View({
+      optionsHash: {
+        valueOne: 'Label One',
+        valueTwo: 'Label Two'
+      },
+      optionsArray: [
+        ['valueOne', 'Label One'],
+        ['valueTwo', 'Label Two']
+      ],
+      template: '{{input name="a" type="select" options=optionsHash}}{{input name="b" type="select" options=optionsArray}}'
+    });
+    selectView.render();
+    equal(selectView.$('select').length, 2);
+    equal(selectView.$('option').length, 4);
+    equal(selectView.$('select[name="a"]').find('option')[0].getAttribute('value'), 'valueOne');
+  });
+
+  test('input-error helper', function() {
+    
+  });
+
+  test("control-group helper", function() {
+
   });
 
   test("error helper", function() {

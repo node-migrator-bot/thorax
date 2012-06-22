@@ -63,14 +63,18 @@ Thorax.View.registerHelper('input-error', function(forInputId, options) {
 });
 
 Thorax.View.registerHelper('input', function(options) {
-  var tag = 'input',
-      content = null,
+  var content = null,
       inputGenerator,
       labelGenerator,
       inputErrorMessageGenerator,
       id;
+
+  options.hash.tag = 'input';
   id = options.hash.id = options.hash.id || ((options.hash.name || _.uniqueId('input')) + '-' + this.cid);
-  options.hash.placeholder = options.hash.placeholder || options.hash.label;
+  
+  if (options.hash.label && !options.hash.placeholder) {
+    options.hash.placeholder = options.hash.label;
+  }
   
   if (options.hash.label) {
     labelGenerator = function(generatorOptions) {
@@ -99,29 +103,31 @@ Thorax.View.registerHelper('input', function(options) {
   }
 
   if (options.hash.type === 'textarea') {
-    content = '';
-    tag = 'textarea';
+    content = options.hash.value || '';
+    options.hash.tag = 'textarea';
+    delete options.hash.value;
     delete options.hash.type;
   } else if (options.hash.type === 'select') {
-    var options = options.hash.options || [];
-    if (!_.isArray(options)) {
-      options = _.map(options, function(value, key) {
+    options.hash.tag = 'select';
+    var selectOptions = options.hash.options || [];
+    if (!_.isArray(selectOptions)) {
+      selectOptions = _.map(selectOptions, function(label, value) {
         return {
           value: value,
-          label: key,
+          label: label,
           selected: value == options.hash.selected
         }
       }, this);
     }
-    content = _.map(options, function(option) {
+    content = _.map(selectOptions, function(option) {
       var tagOptions = {
         tag: 'option',
-        value: options.value
+        value: option[0] || option.value
       };
       if (option.selected) {
         tagOptions.selected = selected;
       }
-      return Thorax.View.tag(tagOptions, option.label, this);
+      return Thorax.View.tag(tagOptions, option[1] || option.label, this);
     }, this).join('');
     delete options.hash.type;
     delete options.hash.options;
@@ -147,7 +153,11 @@ Thorax.View.registerHelper('input', function(options) {
       }
     };
   } else {
-    return new Handlebars.SafeString(labelGenerator.call(this) + inputErrorMessageGenerator.call(this) + inputGenerator.call(this));
+    return new Handlebars.SafeString(
+      (labelGenerator ? labelGenerator.call(this) : '') +
+      (inputErrorMessageGenerator ? inputErrorMessageGenerator.call(this) : '') +
+      (inputGenerator ? inputGenerator.call(this) : '')
+    );
   }
 });
 
@@ -168,27 +178,6 @@ Thorax.View.registerHelper('control-group', function(options) {
   });
   return new Handlebars.SafeString(Thorax.View.tag(options.hash, options.fn(context), this));
 });
-
-
-/*
-
-{{control-group label="Text Input" type="text" name="mine"}}
-
-{{#control-group}}
-  {{#label for="{{id}}"}}Text Input{{/label}}
-  {{input type="text" id="{{id}}"}}
-
-{{/control-group}}
-
-*/
-//<div class="control-group">
-//      <label class="control-label" for="input01">Text input</label>
-//      <div class="controls">
-//        <input type="text" class="input-xlarge" id="input01">
-//        <p class="help-block">Supporting help text</p>
-//      </div>
-//    </div>
-//
 
 function resetErrorState() {
   this.$('[' + errorAttributeName + ']').empty().hide();
