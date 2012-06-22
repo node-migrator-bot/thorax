@@ -163,7 +163,13 @@ $(function() {
   });
 
   test("control-group helper", function() {
-
+    var controlGroupView = new Application.View({
+      template: '{{#control-group name="a" label="hey"}}{{control-label}}{{control-input class="tasty"}}{{control-error}}{{/control-group}}'
+    });
+    controlGroupView.render();
+    equal(controlGroupView.$('label').html(), 'hey');
+    equal(controlGroupView.$('input.tasty').length, 1);
+    equal(controlGroupView.$('.help-block').length, 1);
   });
 
   test("error helper", function() {
@@ -182,5 +188,28 @@ $(function() {
     ok(errorHelperView.serialize());
     equal(errorHelperView.$('.error-header').length, 0);
     equal(errorHelperView.$('ul.error-messages li').length, 0);
+  });
+
+  test("control group + validation", function() {
+    var formView = new Application.View({
+      template: '<form>{{#control-group name="a"}}{{control-error}}{{control-input data-validate-required="true"}}{{/control-group}}{{#control-group name="b"}}{{control-error}}{{control-input data-validate-min-length="3" data-error-message="too short"}}{{/control-group}}</form>'
+    });
+    formView.render();
+
+    ok($(formView.$('.help-block')[0]).html() === '');
+    ok(!formView.serialize());
+    ok($(formView.$('.help-block')[0]).html() !== '');
+    ok($(formView.$('.help-block')[1]).html() === 'too short');
+    formView.populate({
+      a: 'a',
+      b: 'ab'
+    });
+    ok(!formView.serialize());
+    formView.populate({
+      b: 'abc'
+    });
+    ok(formView.serialize());
+    ok($(formView.$('.help-block')[0]).html() === '');
+    ok($(formView.$('.help-block')[1]).html() === '');
   });
 });

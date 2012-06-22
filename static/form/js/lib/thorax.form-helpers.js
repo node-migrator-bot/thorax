@@ -32,39 +32,32 @@ Thorax.View.registerHelper('input', function(options) {
       labelGenerator,
       inputErrorMessageGenerator,
       id;
-
   options.hash.tag = 'input';
   id = options.hash.id = options.hash.id || ((options.hash.name || _.uniqueId('input')) + '-' + this.cid);
-  
+
   if (options.hash.label && !options.hash.placeholder) {
     options.hash.placeholder = options.hash.label;
   }
   
   if (options.hash.label) {
+    var label = options.hash.label;
     labelGenerator = function(generatorOptions) {
       return Thorax.View.tag(_.extend({
         tag: 'label',
         'for': options.hash.id,
         'class': 'control-label'
-      }, generatorOptions ? generatorOptions.hash : {}));
+      }, generatorOptions ? generatorOptions.hash : {}), label, this);
     };
     delete options.hash.label;
   }
-
-  if (!('error-message' in options.hash) || options.hash['error-message']) {
-    if (options.hash['error-message']) {
-      options.hash['data-error-message'] = options.hash['error-message'];
-      delete options.hash['error-message'];
-    }
-    inputErrorMessageGenerator = function(generatorOptions) {
-      var inputErrorMessageOptions = {
-        tag: 'p',
-        'class': 'help-block',
-      };
-      inputErrorMessageOptions[inputErrorAttributeName] = id;
-      return Thorax.View.tag(_.extend(inputErrorMessageOptions, generatorOptions ? generatorOptions.hash : {}));
+  inputErrorMessageGenerator = function(generatorOptions) {
+    var inputErrorMessageOptions = {
+      tag: 'p',
+      'class': 'help-block',
     };
-  }
+    inputErrorMessageOptions[inputErrorAttributeName] = id;
+    return Thorax.View.tag(_.extend(inputErrorMessageOptions, generatorOptions ? generatorOptions.hash : {}));
+  };
 
   if (options.hash.type === 'textarea') {
     content = options.hash.value || '';
@@ -98,7 +91,8 @@ Thorax.View.registerHelper('input', function(options) {
     delete options.hash.selected;
   }
   inputGenerator = function(generatorOptions) {
-    return Thorax.View.tag(_.extend({}, options.hash, generatorOptions ? generatorOptions.hash : {}), content, this);
+    var output = Thorax.View.tag(_.extend({}, options.hash, generatorOptions ? generatorOptions.hash : {}), content, this);
+    return output;
   };
 
   var returnObjects = options.hash['return-objects'];
@@ -106,13 +100,16 @@ Thorax.View.registerHelper('input', function(options) {
 
   if (returnObjects) {
     return {
-      input: function() {
+      'control-input': function() {
         return new Handlebars.SafeString(inputGenerator.apply(this, arguments));
       },
-      label: function() {
+      'control-label': function() {
+        if (!labelGenerator) {
+          return '';
+        }
         return new Handlebars.SafeString(labelGenerator.apply(this, arguments));
       },
-      'input-error': function() {
+      'control-error': function() {
         return new Handlebars.SafeString(inputErrorMessageGenerator.apply(this, arguments));
       }
     };
@@ -126,7 +123,7 @@ Thorax.View.registerHelper('input', function(options) {
 });
 
 Thorax.View.registerHelper('control-group', function(options) {
-  var generators = Handlebars.helpers.input({
+  var generators = Handlebars.helpers.input.call(this, {
     hash: {
       'return-objects': true,
       name: options.hash.name,
@@ -135,11 +132,8 @@ Thorax.View.registerHelper('control-group', function(options) {
   });
   delete options.hash.name;
   delete options.hash.label;
-  var context = _.extend({}, this, {
-    input: generators.input,
-    label: generators.label,
-    'input-error': generators['input-error']
-  });
+  options.hash['class'] = options.hash['class'] || 'control-group';
+  var context = _.extend({}, this, generators);
   return new Handlebars.SafeString(Thorax.View.tag(options.hash, options.fn(context), this));
 });
 
