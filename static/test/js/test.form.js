@@ -211,5 +211,14 @@ $(function() {
     ok(formView.serialize());
     ok($(formView.$('.help-block')[0]).html() === '');
     ok($(formView.$('.help-block')[1]).html() === '');
+    //ensure the form can re-error
+    formView.populate({
+      a: '',
+      b: ''
+    });
+    ok(!formView.serialize());
+    console.log(formView.html());
+    ok($(formView.$('.help-block')[0]).html() !== '');
+    ok($(formView.$('.help-block')[1]).html() === 'too short');
   });
 });
