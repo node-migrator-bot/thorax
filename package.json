@@ -77,7 +77,7 @@
       "files": {
         "static/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js",
         "static/form/js/lib/thorax.form.js": "js/lib/thorax.form.js",
-        "static/form/js/lib/thorax.validations.js": "js/lib/thorax.validations.js",
+        "static/form/js/lib/thorax.form-validation.js": "js/lib/thorax.form-validation.js",
         "static/form/js/lib/thorax.form-helpers.js": "js/lib/thorax.form-helpers.js"
       }
     }

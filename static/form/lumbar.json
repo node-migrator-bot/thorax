@@ -9,7 +9,7 @@
           "src": "js/lib/thorax.form-helpers.js"
         },
         {
-          "src": "js/lib/thorax.validations.js"
+          "src": "js/lib/thorax.form-validation.js"
         }
       ]
     }
