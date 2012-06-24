@@ -27,6 +27,22 @@
           "global": true
         },
         {
+          "src": "js/lib/thorax.loading.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/thorax.form.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/thorax.form-validation.js",
+          "global": true
+        },
+        {
+          "src": "js/lib/thorax.form-helpers.js",
+          "global": true
+        },
+        {
           "src": "js/lib/script.js",
           "global": true
         },
