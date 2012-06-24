@@ -14,6 +14,5 @@ var handlebarsExtension = 'handlebars',
     oldBackboneView = Backbone.View,
     //android scrollTo(0, 0) shows url bar, scrollTo(0, 1) hides it
     minimumScrollYOffset = (navigator.userAgent.toLowerCase().indexOf("android") > -1) ? 1 : 0,
-    ELEMENT_NODE_TYPE = 1,
-    _viewsIndexedByCid = {},
-    renderTemplate;
+    ELEMENT_NODE_TYPE = 1;
+    var renderTemplate;

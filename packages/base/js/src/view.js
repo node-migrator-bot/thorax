@@ -1,5 +1,6 @@
 //Backbone.View constructor doesn't provide everything we need
 //so create a new one
+var _viewsIndexedByCid = {};
 var View = function(options) {
   this.cid = _.uniqueId('view');
   _viewsIndexedByCid[this.cid] = this;
@@ -131,66 +132,6 @@ _.extend(View.prototype, Backbone.View.prototype, {
     return url && options.fetch && (
       typeof model_or_collection.isPopulated === 'undefined' || !model_or_collection.isPopulated()
     );
-  },
-
-  setModel: function(model, options) {
-    var el = (this.el[0] || this.el);
-    el.setAttribute(modelCidAttributeName, model.cid);
-    if (model.name) {
-      el.setAttribute(modelNameAttributeName, model.name);
-    }
-
-    var old_model = this.model;
-
-    if (old_model) {
-      this.freeze(old_model);
-    }
-
-    if (model) {
-      this.model = model;
-      this.setModelOptions(options);
-
-      this._events.model.forEach(function(event) {
-        this.model.bind(event[0], event[1]);
-      }, this);
-
-      this.model.trigger('set', this.model, old_model);
-  
-      if (this._shouldFetch(this.model, this._modelOptions)) {
-        var success = this._modelOptions.success;
-        this._loadModel(this.model, this._modelOptions);
-      } else {
-        //want to trigger built in event handler (render() + populate())
-        //without triggering event on model
-        this._onModelChange();
-      }
-    }
-
-    return this;
-  },
-
-  _onModelChange: function() {
-    if (this._modelOptions.render) {
-      this.render();
-    }
-  },
-
-  _loadModel: function(model, options) {
-    model.fetch(options);
-  },
-
-  setModelOptions: function(options) {
-    if (!this._modelOptions) {
-      this._modelOptions = {
-        fetch: true,
-        success: false,
-        render: true,
-        populate: true,
-        errors: true
-      };
-    }
-    _.extend(this._modelOptions, options || {});
-    return this._modelOptions;
   },
 
   bindCollection: function(collection, options) {
@@ -362,21 +303,6 @@ _.extend(View.prototype, Backbone.View.prototype, {
       }
     }
     return item_view;
-  },
-
-  freeze: function(modelOrCollection) {
-    if (this.model && (modelOrCollection === this.model || !modelOrCollection)) {
-      this._events.model.forEach(function(event) {
-        this.model.unbind(event[0], event[1]);
-      }, this);
-    }
-    for (var cid in this._boundCollectionsByCid) {
-      if (!modelOrCollection || this._boundCollectionsByCid[cid] === modelOrCollection) {
-        this._events.collection.forEach(function(event) {
-          this._boundCollectionsByCid[cid].unbind(event[0], event[1]);
-        }, this);
-      }
-    }
   },
 
   destroy: function() {
@@ -644,8 +570,6 @@ function getViewName(silent) {
   }
 }
 
-
-
 function ensureRendered() {
   !this._renderCount && this.render();
 }
@@ -667,30 +591,6 @@ function getTemplateContext(data) {
 
 function onCollectionReset(collection) {
   this.renderCollection(collection);
-}
-
-//model/collection events, to be bound/unbound on setModel/setCollection
-function processModelOrCollectionEvent(events, type) {
-  for (var _name in events[type] || {}) {
-    if (_.isArray(events[type][_name])) {
-      for (var i = 0; i < events[type][_name].length; ++i) {
-        this._events[type].push([_name, bindEventHandler.call(this, events[type][_name][i])]);
-      }
-    } else {
-      this._events[type].push([_name, bindEventHandler.call(this, events[type][_name])]);
-    }
-  }
-}
-
-function bindModelAndCollectionEvents(events) {
-  if (!this._events) {
-    this._events = {
-      model: [],
-      collection: []
-    };
-  }
-  processModelOrCollectionEvent.call(this, events, 'model');
-  processModelOrCollectionEvent.call(this, events, 'collection');
 }
 
 function preserveCollectionElements(callback) {

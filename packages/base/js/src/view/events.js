@@ -1,3 +1,5 @@
+var internalViewEvents = {};
+
 _.extend(View.prototype, {
   //allow events hash to specify view, collection and model events
   //as well as DOM events. Merges Thorax.View.events with this.events
@@ -42,6 +44,21 @@ _.extend(View.prototype, {
         }
       } else {
         this.$el.bind(params.name, boundHandler);
+      }
+    }
+  },
+
+  freeze: function(modelOrCollection) {
+    if (this.model && (modelOrCollection === this.model || !modelOrCollection)) {
+      this._events.model.forEach(function(event) {
+        this.model.unbind(event[0], event[1]);
+      }, this);
+    }
+    for (var cid in this._boundCollectionsByCid) {
+      if (!modelOrCollection || this._boundCollectionsByCid[cid] === modelOrCollection) {
+        this._events.collection.forEach(function(event) {
+          this._boundCollectionsByCid[cid].unbind(event[0], event[1]);
+        }, this);
       }
     }
   }
@@ -173,3 +190,28 @@ function eventParamsFromEventItem(name, handler) {
 function isDOMEvent(name) {
   return !(!name.match(/\s+/) && domEvents.indexOf(name) === -1);
 }
+
+//model/collection events, to be bound/unbound on setModel/setCollection
+function processModelOrCollectionEvent(events, type) {
+  for (var _name in events[type] || {}) {
+    if (_.isArray(events[type][_name])) {
+      for (var i = 0; i < events[type][_name].length; ++i) {
+        this._events[type].push([_name, bindEventHandler.call(this, events[type][_name][i])]);
+      }
+    } else {
+      this._events[type].push([_name, bindEventHandler.call(this, events[type][_name])]);
+    }
+  }
+}
+
+function bindModelAndCollectionEvents(events) {
+  if (!this._events) {
+    this._events = {
+      model: [],
+      collection: []
+    };
+  }
+  processModelOrCollectionEvent.call(this, events, 'model');
+  processModelOrCollectionEvent.call(this, events, 'collection');
+}
+

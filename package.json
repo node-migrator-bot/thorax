@@ -34,6 +34,8 @@
         "packages/base/js/src/view.js",
         "packages/base/js/src/view/mixin.js",
         "packages/base/js/src/view/events.js",
+        "packages/base/js/src/view/model.js",
+        "packages/base/js/src/view/collection.js",
         "packages/base/js/src/view/events-builtin.js",
         "packages/base/js/src/view/deprecated.js",
         "packages/base/js/src/layout.js",
