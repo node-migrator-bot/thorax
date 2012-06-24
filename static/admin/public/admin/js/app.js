@@ -384,7 +384,7 @@
         }
       });
       return Application.bind('reload', function() {
-        if (_this.applicationWindow && _this.frame.view === _this.applicationWindow) {
+        if (_this.applicationWindow && _this.frame.getView() === _this.applicationWindow) {
           return _this.applicationWindow.reload();
         }
       });

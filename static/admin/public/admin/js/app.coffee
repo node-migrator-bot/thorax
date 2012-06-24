@@ -271,7 +271,7 @@ MainView = Application.View.extend
       key: key
     @frame = new Application.Layout attributes: class: 'display-frame'
     Application.bind 'reload', =>
-      if @applicationWindow and @frame.view is @applicationWindow
+      if @applicationWindow and @frame.getView() is @applicationWindow
         @applicationWindow.reload()
   openApplication: ->
     @$('.view-application').show()
