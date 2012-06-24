@@ -1,4 +1,4 @@
-ViewPrototype.mixin = function(name) {
+View.prototype.mixin = function(name) {
   if (!this._appliedMixins) {
     this._appliedMixins = [];
   }
@@ -19,15 +19,15 @@ ViewPrototype.mixin = function(name) {
   }
 };
 
-View.registerMixin = function(name, callback, methods) {
-  Thorax.registry.Mixins[name] = [callback, methods];
-};
-
-View.mixins = [];
-
-View.mixin = function(mixin) {
-  this.mixins.push(mixin);
-};
+_.extend(View, {
+  registerMixin: function(name, callback, methods) {
+    Thorax.registry.Mixins[name] = [callback, methods];
+  },
+  mixins: [],
+  mixin: function(mixin) {
+    this.mixins.push(mixin);
+  }
+});
 
 function applyMixin(mixin) {
   if (_.isArray(mixin)) {

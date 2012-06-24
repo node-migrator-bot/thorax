@@ -30,8 +30,12 @@
       "sources": [
         "packages/base/js/src/header.js",
         "packages/base/js/src/constants.js",
+        "packages/base/js/src/util.js",
         "packages/base/js/src/view.js",
         "packages/base/js/src/view/mixin.js",
+        "packages/base/js/src/view/events.js",
+        "packages/base/js/src/view/events-builtin.js",
+        "packages/base/js/src/view/deprecated.js",
         "packages/base/js/src/layout.js",
         "packages/base/js/src/router.js",
         "packages/base/js/src/view-controller.js",

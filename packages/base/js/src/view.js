@@ -13,12 +13,10 @@ var View = function(options) {
   this.initialize.apply(this, arguments);
   this.trigger('initialize:after', options);
 };
-//save as local var for minification
-var ViewPrototype = View.prototype;
 
 View.extend = Backbone.View.extend;
 
-_.extend(ViewPrototype, Backbone.View.prototype, {
+_.extend(View.prototype, Backbone.View.prototype, {
   _configure: function(options) {
     //this.options is removed in Thorax.View, we merge passed
     //properties directly with the view and template context
@@ -124,53 +122,6 @@ _.extend(ViewPrototype, Backbone.View.prototype, {
     }
   },
 
-  //allow events hash to specify view, collection and model events
-  //as well as DOM events. Merges Thorax.View.events with this.events
-  delegateEvents: function(events) {
-    this.undelegateEvents && this.undelegateEvents();
-    //bindModelAndCollectionEvents on this.constructor.events and this.events
-    //done in _configure
-    this.registerEvents(this.constructor.events);
-    if (this.events) {
-      this.registerEvents(this.events);
-    }
-    if (events) {
-      this.registerEvents(events);
-      bindModelAndCollectionEvents.call(this, events);
-    }
-  },
-
-  registerEvents: function(events) {
-    processEvents.call(this, events).forEach(this._addEvent, this);
-  },
-
-  //params may contain:
-  //- name
-  //- originalName
-  //- selector
-  //- type "view" || "DOM"
-  //- handler
-  _addEvent: function(params) {
-    if (params.type === 'view') {
-      this.bind(params.name, params.handler, this);
-    } else {
-      var boundHandler = containHandlerToCurentView(bindEventHandler.call(this, params.handler), this.cid);
-      if (params.selector) {
-        //TODO: determine why collection views and some nested views
-        //need defered event delegation 
-        if (typeof jQuery !== 'undefined' && $ === jQuery) {
-          _.defer(_.bind(function() {
-            this.$el.delegate(params.selector, params.name, boundHandler);
-          }, this));
-        } else {
-          this.$el.delegate(params.selector, params.name, boundHandler);
-        }
-      } else {
-        this.$el.bind(params.name, boundHandler);
-      }
-    }
-  },
-
   _shouldFetch: function(model_or_collection, options) {
     var url = (
       (!model_or_collection.collection && getValue(model_or_collection, 'urlRoot')) ||
@@ -241,13 +192,6 @@ _.extend(ViewPrototype, Backbone.View.prototype, {
     _.extend(this._modelOptions, options || {});
     return this._modelOptions;
   },
-
-  //DEPRECATION: backwards compatibility with < 1.3
-  setCollection: function(collection, options) {
-    this.collection = collection;
-    this.bindCollection(collection, options);
-  },
-  //end deprecation
 
   bindCollection: function(collection, options) {
     var old_collection = this.collection;
@@ -345,86 +289,6 @@ _.extend(ViewPrototype, Backbone.View.prototype, {
     return output;
   },
 
-  renderCollection: function(collection) {
-    //DEPRECATION: backwards compatibility with < 1.3
-    if (!collection) {
-      collection = this.collection;
-    }
-    //end DEPRECATION
-    this.render();
-    var collection_element = this._getCollectionElement(collection).empty();
-    if (collection.isEmpty()) {
-      collection_element.attr(collectionEmptyAttributeName, true);
-      appendEmpty.call(this, collection);
-    } else {
-      var collectionOptions = this._collectionOptionsByCid[collection.cid];
-      collection_element.removeAttr(collectionEmptyAttributeName);
-      collection.forEach(function(item, i) {
-        if (!collectionOptions.filter || collectionOptions.filter &&
-          (typeof collectionOptions.filter === 'string'
-              ? this[collectionOptions.filter]
-              : collectionOptions.filter).call(this, item, i)
-          ) {
-          this.appendItem(collection, item, i, {
-            collectionElement: collection_element
-          });
-        }
-      }, this);
-    }
-    this.trigger('rendered:collection', collection_element, collection);
-  },
-
-  //DEPRECATION: backwards compatibility with < 1.3, will become private
-  renderItem: function(item, i, collection) {
-    if (!collection) {
-      collection = this.collection;
-    }
-    var collection_options = this._collectionOptionsByCid[collection.cid];
-    if (collection_options['item-view']) {
-      var view = this.view(collection_options['item-view'], {
-        model: item
-      });
-      view.render(collection_options['item-template']);
-      return view;
-    } else {
-      var context = this.itemContext(item, i);
-      return this.renderTemplate(collection_options['item-template'] || getViewName.call(this) + '-item', context);
-    }
-  },
-
-  //DEPRECATION: backwards compatibility with < 1.3, will become private
-  renderEmpty: function(collection) {
-    if (!collection) {
-      collection = this.collection;
-    }
-    var collection_options = this._collectionOptionsByCid[collection.cid],
-        context = this.emptyContext();
-    if (collection_options['empty-view']) {
-      var view = this.view(collection_options['empty-view'], context);
-      view.render(collection_options['empty-template']);
-      return view;
-    } else {
-      var emptyTemplate = collection_options['empty-template'];
-      if (!emptyTemplate) {
-        var name = getViewName.call(this, true);
-        if (name) {
-          emptyTemplate = this.loadTemplate(name + '-empty', {}, Thorax.registry);
-        }
-        if (!emptyTemplate) {
-          return;
-        }
-      }
-    }
-    return this.renderTemplate(emptyTemplate, context);
-  },
-
-  //DEPRECATION: backwards compatibility with < 1.3, will become private
-  itemContext: function(item, i) {
-    return item.attributes;
-  },
-
-  //DEPRECATION: backwards compatibility with < 1.3, will become private
-  emptyContext: function() {},
 
   //appendItem(collection, model [,index])
   //appendItem(collection, html_string, index)
@@ -558,39 +422,6 @@ _.extend(View, {
     this[name] = callback;
     Handlebars.registerHelper(name, this[name]);
   },
-  //events for all views
-  events: {
-    model: {},
-    collection: {}
-  },
-  registerEvents: function(events) {
-    for(var name in events) {
-      if (name === 'model' || name === 'collection') {
-        for (var _name in events[name]) {
-          addEvent(this.events[name], _name, events[name][_name]);
-        }
-      } else {
-        addEvent(this.events, name, events[name]);
-      }
-    }
-  },
-  unregisterEvents: function(events) {
-    if (typeof events === 'undefined') {
-      this.events = {
-        model: {},
-        collection: {}
-      };
-    } else if (typeof events === 'string' && arguments.length === 1) {
-      if (events === 'model' || events === 'collection') {
-        this.events[events] = {};
-      } else {
-        this.events[events] = [];
-      }
-    //remove collection or model events
-    } else if (arguments.length === 2) {
-      this.events[arguments[0]][arguments[1]] = [];
-    }
-  },
   expandToken: function(input, scope) {
     if (input && input.indexOf && input.indexOf('{{') >= 0) {
       var re = /(?:\{?[^{]+)|(?:\{\{([^}]+)\}\})/g,
@@ -654,87 +485,6 @@ _.extend(View, {
     }).join(' ') + '>' + (content || '') + '</' + tag + '>';
   }
 });
-
-var internalEvents = {
-  'initialize:after': function(options) {
-    //bind model or collection if passed to constructor
-    if (options && options.model) {
-      this.setModel(options.model);
-    }
-  },
-  model: {
-    error: function(model, errors){
-      if (this._modelOptions.errors) {
-        this.trigger('error', errors);
-      }
-    },
-    change: function() {
-      this._onModelChange();
-    }
-  },
-  collection: {
-    add: function(model, collection) {
-      var collection_element = this._getCollectionElement(collection),
-          collectionOptions = this._collectionOptionsByCid[collection.cid];
-      if (collection.length === 1) {
-        if(collection_element.length) {
-          //note that this is $.empty() and not renderEmpty or other collection functionality
-          collection_element.removeAttr(collectionEmptyAttributeName);
-          collection_element.empty();
-        }
-        if (collectionOptions.renderOnEmptyStateChange) {
-          this.render();
-        }
-      }
-      if (collection_element.length) {
-        var index = collection.indexOf(model);
-        if (!collectionOptions.filter || collectionOptions.filter &&
-          (typeof collectionOptions.filter === 'string'
-              ? this[collectionOptions.filter]
-              : collectionOptions.filter).call(this, model, index)
-          ) {
-          this.appendItem(collection, model, index, {
-            collectionElement: collection_element
-          });
-        }
-      }
-    },
-    remove: function(model, collection) {
-      var collection_element = this._getCollectionElement(collection);
-      collection_element.find('[' + modelCidAttributeName + '="' + model.cid + '"]').remove();
-      for (var cid in this._views) {
-        if (this._views[cid].model && this._views[cid].model.cid === model.cid) {
-          this._views[cid].destroy();
-          delete this._views[cid];
-          break;
-        }
-      }
-      if (collection.length === 0) {
-        if (collection_element.length) {
-          collection_element.attr(collectionEmptyAttributeName, true);
-          appendEmpty.call(this, collection);
-        }
-        if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
-          this.render();
-        }
-      }
-    },
-    reset: function(collection) {
-      onCollectionReset.call(this, collection);
-    },
-    error: function(collection, message) {
-      if (this._collectionOptionsByCid[collection.cid].errors) {
-        this.trigger('error', message);
-      }
-    }
-  }
-};
-internalEvents['click [' + callMethodAttributeName + ']'] = function(event) {
-  var target = $(event.target);
-  event.preventDefault();
-  this[target.attr(callMethodAttributeName)].call(this, event);
-};
-View.registerEvents(internalEvents);
 
 var viewTemplateOverrides = {};
 View.registerHelper('view', function(view, options) {
@@ -871,12 +621,6 @@ function unbindPartials() {
   }
 }
 
-//'selector' is not present in $('<p></p>')
-//TODO: investigage a better detection method
-function is$(obj) {
-  return typeof obj === 'object' && ('length' in obj);
-}
-
 //private Thorax.View methods
 function getView(name, attributes) {
   if (typeof name === 'string') {
@@ -900,12 +644,7 @@ function getViewName(silent) {
   }
 }
 
-function getValue(object, prop) {
-  if (!(object && object[prop])) {
-    return null;
-  }
-  return _.isFunction(object[prop]) ? object[prop]() : object[prop];
-}
+
 
 function ensureRendered() {
   !this._renderCount && this.render();
@@ -930,15 +669,6 @@ function onCollectionReset(collection) {
   this.renderCollection(collection);
 }
 
-function containHandlerToCurentView(handler, cid) {
-  return function(event) {
-    var containing_view_element = $(event.target).closest('[' + viewNameAttributeName + ']');
-    if (!containing_view_element.length || containing_view_element[0].getAttribute(viewCidAttributeName) == cid) {
-      handler(event);
-    }
-  };
-}
-
 //model/collection events, to be bound/unbound on setModel/setCollection
 function processModelOrCollectionEvent(events, type) {
   for (var _name in events[type] || {}) {
@@ -949,90 +679,6 @@ function processModelOrCollectionEvent(events, type) {
     } else {
       this._events[type].push([_name, bindEventHandler.call(this, events[type][_name])]);
     }
-  }
-}
-
-//used by processEvents
-var domEvents = [
-  'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout',
-  'touchstart', 'touchend', 'touchmove',
-  'click', 'dblclick',
-  'keyup', 'keydown', 'keypress',
-  'submit', 'change',
-  'focus', 'blur'
-];
-
-function bindEventHandler(callback) {
-  var method = typeof callback === 'function' ? callback : this[callback];
-  if (!method) {
-    throw new Error('Event "' + callback + '" does not exist');
-  }
-  return _.bind(method, this);
-}
-
-function processEvents(events) {
-  if (_.isFunction(events)) {
-    events = events.call(this);
-  }
-  var processedEvents = [];
-  for (var name in events) {
-    if (name !== 'model' && name !== 'collection') {
-      if (name.match(/,/)) {
-        name.split(/,/).forEach(function(fragment) {
-          processEventItem.call(this, fragment.replace(/(^[\s]+|[\s]+$)/g, ''), events[name], processedEvents);
-        }, this);
-      } else {
-        processEventItem.call(this, name, events[name], processedEvents);
-      }
-    }
-  }
-  return processedEvents;
-}
-
-function processEventItem(name, handler, target) {
-  if (_.isArray(handler)) {
-    for (var i = 0; i < handler.length; ++i) {
-      target.push(eventParamsFromEventItem.call(this, name, handler[i]));
-    }
-  } else {
-    target.push(eventParamsFromEventItem.call(this, name, handler));
-  }
-}
-
-var eventSplitter = /^(\S+)(?:\s+(.+))?/;
-
-function eventParamsFromEventItem(name, handler) {
-  var params = {
-    originalName: name,
-    handler: typeof handler === 'string' ? this[handler] : handler
-  };
-  var match = eventSplitter.exec(name);
-  params.name = match[1];
-  if (isDOMEvent(params.name)) {
-    params.type = 'DOM';
-    params.name += '.delegateEvents' + this.cid;
-    params.selector = match[2];
-  } else {
-    params.type = 'view';
-  }
-  return params;
-}
-
-function isDOMEvent(name) {
-  return !(!name.match(/\s+/) && domEvents.indexOf(name) === -1);
-}
-
-//used by Thorax.View.registerEvents for global event registration
-function addEvent(target, name, handler) {
-  if (!target[name]) {
-    target[name] = [];
-  }
-  if (_.isArray(handler)) {
-    for (var i = 0; i < handler.length; ++i) {
-      target[name].push(handler[i]);
-    }
-  } else {
-    target[name].push(handler);
   }
 }
 
@@ -1061,6 +707,77 @@ function preserveCollectionElements(callback) {
       new_collection_element[0].parentNode.insertBefore(old_collection_element[0], new_collection_element[0]);
       new_collection_element[0].parentNode.removeChild(new_collection_element[0]);
     }
+  }
+}
+
+function renderCollection(collection) {
+  //DEPRECATION: backwards compatibility with < 1.3
+  if (!collection) {
+    collection = this.collection;
+  }
+  //end DEPRECATION
+  this.render();
+  var collection_element = this._getCollectionElement(collection).empty();
+  if (collection.isEmpty()) {
+    collection_element.attr(collectionEmptyAttributeName, true);
+    appendEmpty.call(this, collection);
+  } else {
+    var collectionOptions = this._collectionOptionsByCid[collection.cid];
+    collection_element.removeAttr(collectionEmptyAttributeName);
+    collection.forEach(function(item, i) {
+      if (!collectionOptions.filter || collectionOptions.filter &&
+        (typeof collectionOptions.filter === 'string'
+            ? this[collectionOptions.filter]
+            : collectionOptions.filter).call(this, item, i)
+        ) {
+        this.appendItem(collection, item, i, {
+          collectionElement: collection_element
+        });
+      }
+    }, this);
+  }
+  this.trigger('rendered:collection', collection_element, collection);
+}
+
+function renderEmpty(collection) {
+  if (!collection) {
+    collection = this.collection;
+  }
+  var collection_options = this._collectionOptionsByCid[collection.cid],
+      context = this.emptyContext();
+  if (collection_options['empty-view']) {
+    var view = this.view(collection_options['empty-view'], context);
+    view.render(collection_options['empty-template']);
+    return view;
+  } else {
+    var emptyTemplate = collection_options['empty-template'];
+    if (!emptyTemplate) {
+      var name = getViewName.call(this, true);
+      if (name) {
+        emptyTemplate = this.loadTemplate(name + '-empty', {}, Thorax.registry);
+      }
+      if (!emptyTemplate) {
+        return;
+      }
+    }
+  }
+  return this.renderTemplate(emptyTemplate, context);
+}
+
+function renderItem(item, i, collection) {
+  if (!collection) {
+    collection = this.collection;
+  }
+  var collection_options = this._collectionOptionsByCid[collection.cid];
+  if (collection_options['item-view']) {
+    var view = this.view(collection_options['item-view'], {
+      model: item
+    });
+    view.render(collection_options['item-template']);
+    return view;
+  } else {
+    var context = this.itemContext(item, i);
+    return this.renderTemplate(collection_options['item-template'] || getViewName.call(this) + '-item', context);
   }
 }
 
