@@ -57,7 +57,8 @@
         "static/loading": "",
         "static/form": "",
         "static/admin": "",
-        "lib": "public/admin/js/lib"
+        "lib": "public/admin/js/lib",
+        "static/form/js/lib": "public/admin/js/lib"
       }
     },
     "docs": {
