@@ -19,18 +19,18 @@
   //private vars for Thorax.View
   var handlebarsExtension = 'handlebars',
       handlebarsExtensionRegExp = new RegExp('\\.' + handlebarsExtension + '$'),
-      layout_cid_attribute_name = 'data-layout-cid',
-      view_name_attribute_name = 'data-view-name',
-      view_cid_attribute_name = 'data-view-cid',
-      call_method_attribute_name = 'data-call-method',
-      view_placeholder_attribute_name = 'data-view-tmp',
-      model_cid_attribute_name = 'data-model-cid',
-      model_name_attribute_name = 'data-model-name',
-      collection_cid_attribute_name = 'data-collection-cid',
-      collection_name_attribute_name = 'data-collection-name',
-      collection_empty_attribute_name = 'data-collection-empty',
-      partial_attribute_name = 'data-partial-name',
-      old_backbone_view = Backbone.View,
+      layoutCidAttributeName = 'data-layout-cid',
+      viewNameAttributeName = 'data-view-name',
+      viewCidAttributeName = 'data-view-cid',
+      callMethodAttributeName = 'data-call-method',
+      viewPlaceholderAttributeName = 'data-view-tmp',
+      modelCidAttributeName = 'data-model-cid',
+      modelNameAttributeName = 'data-model-name',
+      collectionCidAttributeName = 'data-collection-cid',
+      collectionNameAttributeName = 'data-collection-name',
+      collectionEmptyAttributeName = 'data-collection-empty',
+      partialAttributeName = 'data-partial-name',
+      oldBackboneView = Backbone.View,
       //android scrollTo(0, 0) shows url bar, scrollTo(0, 1) hides it
       minimumScrollYOffset = (navigator.userAgent.toLowerCase().indexOf("android") > -1) ? 1 : 0,
       ELEMENT_NODE_TYPE = 1,
@@ -103,8 +103,8 @@
 
     _ensureElement : function() {
       Backbone.View.prototype._ensureElement.call(this);
-      (this.el[0] || this.el).setAttribute(view_name_attribute_name, this.name || this.cid);
-      (this.el[0] || this.el).setAttribute(view_cid_attribute_name, this.cid);      
+      (this.el[0] || this.el).setAttribute(viewNameAttributeName, this.name || this.cid);
+      (this.el[0] || this.el).setAttribute(viewCidAttributeName, this.cid);      
     },
 
     mixin: function(name) {
@@ -242,9 +242,9 @@
   
     setModel: function(model, options) {
       var el = (this.el[0] || this.el);
-      el.setAttribute(model_cid_attribute_name, model.cid);
+      el.setAttribute(modelCidAttributeName, model.cid);
       if (model.name) {
-        el.setAttribute(model_name_attribute_name, model.name);
+        el.setAttribute(modelNameAttributeName, model.name);
       }
 
       var old_model = this.model;
@@ -339,13 +339,13 @@
 
     _getCollectionElement: function(collection) {
       //DEPRECATION: this._collectionSelector for backwards compatibility with < 1.3
-      var selector = this._collectionSelector || '[' + collection_cid_attribute_name + '="' + collection.cid + '"]';
+      var selector = this._collectionSelector || '[' + collectionCidAttributeName + '="' + collection.cid + '"]';
       var elements = this.$(selector);
       if (elements.length > 1) {
         //TODO: Zepto 1.0 should support jQuery style filter()
         var cid = this.cid;
         return $(_.filter(elements, function(element) {
-          return cid === $(element).closest('[' + view_name_attribute_name + ']').attr(view_name_attribute_name);
+          return cid === $(element).closest('[' + viewNameAttributeName + ']').attr(viewNameAttributeName);
         }));
       } else {
         return elements;
@@ -412,11 +412,11 @@
       this.render();
       var collection_element = this._getCollectionElement(collection).empty();
       if (collection.isEmpty()) {
-        collection_element.attr(collection_empty_attribute_name, true);
+        collection_element.attr(collectionEmptyAttributeName, true);
         appendEmpty.call(this, collection);
       } else {
         var collectionOptions = this._collectionOptionsByCid[collection.cid];
-        collection_element.removeAttr(collection_empty_attribute_name);
+        collection_element.removeAttr(collectionEmptyAttributeName);
         collection.forEach(function(item, i) {
           if (!collectionOptions.filter || collectionOptions.filter &&
             (typeof collectionOptions.filter === 'string'
@@ -539,14 +539,14 @@
         });
 
         if (model) {
-          $(item_element).attr(model_cid_attribute_name, model.cid);
+          $(item_element).attr(modelCidAttributeName, model.cid);
         }
         var previous_model = index > 0 ? collection.at(index - 1) : false;
         if (!previous_model) {
           collection_element.prepend(item_element);
         } else {
           //use last() as appendItem can accept multiple nodes from a template
-          collection_element.find('[' + model_cid_attribute_name + '="' + previous_model.cid + '"]').last().after(item_element);
+          collection_element.find('[' + modelCidAttributeName + '="' + previous_model.cid + '"]').last().after(item_element);
         }
 
         appendViews.call(this, item_element);
@@ -704,7 +704,7 @@
         delete htmlAttributes.tagName;
       }
       if (htmlAttributes.call) {
-        htmlAttributes[call_method_attribute_name] = htmlAttributes.call;
+        htmlAttributes[callMethodAttributeName] = htmlAttributes.call;
         delete htmlAttributes.tagName;
       }
       return '<' + tag + ' ' + _.map(htmlAttributes, function(value, key) {
@@ -754,7 +754,7 @@
         if (collection.length === 1) {
           if(collection_element.length) {
             //note that this is $.empty() and not renderEmpty or other collection functionality
-            collection_element.removeAttr(collection_empty_attribute_name);
+            collection_element.removeAttr(collectionEmptyAttributeName);
             collection_element.empty();
           }
           if (collectionOptions.renderOnEmptyStateChange) {
@@ -776,7 +776,7 @@
       },
       remove: function(model, collection) {
         var collection_element = this._getCollectionElement(collection);
-        collection_element.find('[' + model_cid_attribute_name + '="' + model.cid + '"]').remove();
+        collection_element.find('[' + modelCidAttributeName + '="' + model.cid + '"]').remove();
         for (var cid in this._views) {
           if (this._views[cid].model && this._views[cid].model.cid === model.cid) {
             this._views[cid].destroy();
@@ -786,7 +786,7 @@
         }
         if (collection.length === 0) {
           if (collection_element.length) {
-            collection_element.attr(collection_empty_attribute_name, true);
+            collection_element.attr(collectionEmptyAttributeName, true);
             appendEmpty.call(this, collection);
           }
           if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
@@ -804,10 +804,10 @@
       }
     }
   };
-  internalEvents['click [' + call_method_attribute_name + ']'] = function(event) {
+  internalEvents['click [' + callMethodAttributeName + ']'] = function(event) {
     var target = $(event.target);
     event.preventDefault();
-    this[target.attr(call_method_attribute_name)].call(this, event);
+    this[target.attr(callMethodAttributeName)].call(this, event);
   };
   View.registerEvents(internalEvents);
   
@@ -821,7 +821,7 @@
     if (options.fn) {
       viewTemplateOverrides[placeholder_id] = options.fn;
     }
-    return new Handlebars.SafeString('<div ' + view_placeholder_attribute_name + '="' + placeholder_id + '"></div>');
+    return new Handlebars.SafeString('<div ' + viewPlaceholderAttributeName + '="' + placeholder_id + '"></div>');
   });
   
   View.registerHelper('template', function(name, options) {
@@ -850,9 +850,9 @@
       _.keys(collectionOptionsToExtend).forEach(function(key) {
         delete collectionHelperOptions[key];
       });
-      collectionHelperOptions[collection_cid_attribute_name] = collection.cid;
+      collectionHelperOptions[collectionCidAttributeName] = collection.cid;
       if (collection.name) {
-        collectionHelperOptions[collection_name_attribute_name] = collection.name;
+        collectionHelperOptions[collectionNameAttributeName] = collection.name;
       }
       return new Handlebars.SafeString(View.tag.call(this, collectionHelperOptions, null, this));
     } else {
@@ -887,7 +887,7 @@
   });
 
   View.registerHelper('layout', function(options) {
-    options.hash[layout_cid_attribute_name] = this._view.cid;
+    options.hash[layoutCidAttributeName] = this._view.cid;
     return new Handlebars.SafeString(View.tag.call(this, options.hash, null, this));
   });
 
@@ -915,9 +915,9 @@
         optionsForCallback.hash = _.extend({}, options.hash, callOptions.hash || callOptions);
       }
       var output = this._partials[name].call(this, wrapPartialOptionsBlockCallback(optionsForCallback));
-      this.$('[' + partial_attribute_name + '="' + name + '"]').html(output);
+      this.$('[' + partialAttributeName + '="' + name + '"]').html(output);
     }
-    options.hash[partial_attribute_name] = name;
+    options.hash[partialAttributeName] = name;
     return new Handlebars.SafeString(View.tag(options.hash, this._view._partials[name].call(this._view, wrapPartialOptionsBlockCallback(options)), this));
   });
 
@@ -1007,8 +1007,8 @@
 
   function containHandlerToCurentView(handler, cid) {
     return function(event) {
-      var containing_view_element = $(event.target).closest('[' + view_name_attribute_name + ']');
-      if (!containing_view_element.length || containing_view_element[0].getAttribute(view_cid_attribute_name) == cid) {
+      var containing_view_element = $(event.target).closest('[' + viewNameAttributeName + ']');
+      if (!containing_view_element.length || containing_view_element[0].getAttribute(viewCidAttributeName) == cid) {
         handler(event);
       }
     };
@@ -1144,8 +1144,8 @@
     if (!self._views) {
       return;
     }
-    _.toArray($('[' + view_placeholder_attribute_name + ']', scope || self.el)).forEach(function(el) {
-      var placeholder_id = el.getAttribute(view_placeholder_attribute_name),
+    _.toArray($('[' + viewPlaceholderAttributeName + ']', scope || self.el)).forEach(function(el) {
+      var placeholder_id = el.getAttribute(viewPlaceholderAttributeName),
           cid = placeholder_id.replace(/\-placeholder\d+$/, '');
           view = self._views[cid];
       if (view) {
@@ -1201,13 +1201,13 @@
       //a template is optional in a layout
       var name = getViewName.call(this, true);
       if (output || this._template || (name && this.loadTemplate(name, {}, Thorax.registry))) {
-        //but if present, it must have embedded an element containing layout_cid_attribute_name 
+        //but if present, it must have embedded an element containing layoutCidAttributeName 
         response = View.prototype.render.call(this, output);
         ensureLayoutViewsTargetElement.call(this);
       } else {
         ++this._renderCount;
-        //set the layout_cid_attribute_name on this.$el if there was no template
-        this.$el.attr(layout_cid_attribute_name, this.cid);
+        //set the layoutCidAttributeName on this.$el if there was no template
+        this.$el.attr(layoutCidAttributeName, this.cid);
       }
       return response;
     },
@@ -1245,8 +1245,8 @@
         return;
       }
       //ensure nested layouts only trigger the behavior once
-      var containing_view_element = target.closest('[' + layout_cid_attribute_name + ']');
-      if (!containing_view_element.length || containing_view_element[0].getAttribute(layout_cid_attribute_name) == this.cid) {
+      var containing_view_element = target.closest('[' + layoutCidAttributeName + ']');
+      if (!containing_view_element.length || containing_view_element[0].getAttribute(layoutCidAttributeName) == this.cid) {
         var href = target.attr("href");
         // Route anything that starts with # or / (excluding //domain urls)
         if (href && (href[0] === '#' || (href[0] === '/' && href[1] !== '/'))) {
@@ -1258,13 +1258,13 @@
   });
 
   function ensureLayoutViewsTargetElement() {
-    if (!this.$('[' + layout_cid_attribute_name + '="' + this.cid + '"]')[0]) {
+    if (!this.$('[' + layoutCidAttributeName + '="' + this.cid + '"]')[0]) {
       throw new Error();
     }
   }
 
   function getLayoutViewsTargetElement() {
-    return this.$('[' + layout_cid_attribute_name + '="' + this.cid + '"]')[0] || this.el[0] || this.el;
+    return this.$('[' + layoutCidAttributeName + '="' + this.cid + '"]')[0] || this.el[0] || this.el;
   }
 
   var Router = Backbone.Router.extend({
@@ -1412,13 +1412,13 @@
   //jquery and zepto plugins
   _.extend($.fn, {
     view: function() {
-      var el = $(this).closest('[' + view_cid_attribute_name + ']');
-      return (el && _viewsIndexedByCid[el.attr(view_cid_attribute_name)]) || false;
+      var el = $(this).closest('[' + viewCidAttributeName + ']');
+      return (el && _viewsIndexedByCid[el.attr(viewCidAttributeName)]) || false;
     },
     model: function() {
       var $this = $(this),
-          modelElement = $this.closest('[' + model_cid_attribute_name + ']'),
-          modelCid = modelElement && modelElement.attr(model_cid_attribute_name);
+          modelElement = $this.closest('[' + modelCidAttributeName + ']'),
+          modelCid = modelElement && modelElement.attr(modelCidAttributeName);
       if (modelCid) {
         var view = $this.view();
         if (view && view.model && view.model.cid === modelCid) {
@@ -1433,8 +1433,8 @@
     },
     collection: function(view) {
       var $this = $(this),
-          collectionElement = $this.closest('[' + collection_cid_attribute_name + ']'),
-          collectionCid = collectionElement && collectionElement.attr(collection_cid_attribute_name);
+          collectionElement = $this.closest('[' + collectionCidAttributeName + ']'),
+          collectionCid = collectionElement && collectionElement.attr(collectionCidAttributeName);
       if (collectionCid) {
         view = view || $this.view();
         if (view) {
