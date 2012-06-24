@@ -26,12 +26,19 @@
     "test": "phantomjs bin/run-qunit.js 'http://localhost:8083/zepto.html' 'http://localhost:8083/jquery.html' 'http://localhost:8083/zepto-form.html' 'http://localhost:8083/jquery-form.html' 'http://localhost:8083/zepto-loading.html' 'http://localhost:8083/jquery-loading.html'"
   },
   "builds": {
+    "thorax": {
+      "sources": [
+        "packages/core/js/src/thorax.js"
+      ],
+      "target": "thorax.js"
+    },
     "base": {
       "files": {
-        "packages/core/js/lib/thorax.js": "thorax.js"
+        "thorax.js": "thorax.js"
       }
     },
     "boilerplate-html": {
+      "builds": ["base"],
       "directories": {
         "packages/boilerplate-html": "",
         "packages/bootstrap": "",
@@ -41,6 +48,7 @@
       }
     },
     "boilerplate-lumbar": {
+      "builds": ["base"],
       "directories": {
         "packages/boilerplate-lumbar": "",
         "packages/core/js/lib": "js/lib",
@@ -68,6 +76,7 @@
       }
     },
     "test": {
+      "builds": ["base"],
       "directories": {
         "packages/test": "",
         "packages/core/js/lib": "js/lib"
