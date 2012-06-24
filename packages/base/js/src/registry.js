@@ -40,3 +40,16 @@ function cloneEvents(source, target, key) {
     }
   });
 }
+
+function getView(name, attributes) {
+  if (typeof name === 'string') {
+    if (!Thorax.registry.Views[name]) {
+      throw new Error('view: ' + name + ' does not exist.');
+    }
+    return new Thorax.registry.Views[name](attributes);
+  } else if (typeof name === 'function') {
+    return new name(attributes);
+  } else {
+    return name;
+  }
+}
