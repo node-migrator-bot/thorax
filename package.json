@@ -30,7 +30,16 @@
       "sources": [
         "packages/base/js/src/header.js",
         "packages/base/js/src/constants.js",
-        "packages/base/js/src/main.js",
+        "packages/base/js/src/view.js",
+        "packages/base/js/src/view/mixin.js",
+        "packages/base/js/src/layout.js",
+        "packages/base/js/src/router.js",
+        "packages/base/js/src/view-controller.js",
+        "packages/base/js/src/model.js",
+        "packages/base/js/src/collection.js",
+        "packages/base/js/src/export.js",
+        "packages/base/js/src/registry.js",
+        "packages/base/js/src/application.js",
         "packages/base/js/src/$.js",
         "packages/base/js/src/footer.js"
       ],

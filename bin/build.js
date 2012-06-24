@@ -126,7 +126,6 @@ function buildThorax(info, next) {
 buildAllPackages();
 
 var watchCallback = _.throttle(function(event) {
-  console.log(arguments);
   buildAllPackages();
 }, 1000);
 watchTree(path.join(__dirname, '..', 'packages'), watchCallback);
