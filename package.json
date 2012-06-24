@@ -28,37 +28,34 @@
   "builds": {
     "base": {
       "files": {
-        "lib/thorax.js": "thorax.js",
-        "packages/loading/js/lib/thorax.loading.js": "thorax.loading.js"
+        "packages/core/js/lib/thorax.js": "thorax.js"
       }
     },
     "boilerplate-html": {
       "directories": {
         "packages/boilerplate-html": "",
-        "packages/core/js/lib": "js/lib"
+        "packages/bootstrap": "",
+        "packages/core/js/lib": "js/lib",
+        "packages/loading/js/lib": "js/lib",
+        "packages/form/js/lib": "js/lib"
       }
     },
     "boilerplate-lumbar": {
       "directories": {
         "packages/boilerplate-lumbar": "",
-        "packages/core/js/lib": "js/lib"
-      }
-    },
-    "hello-world-lumbar": {
-      "builds": ["boilerplate-lumbar"],
-      "directories": {
-        "packages/hello-world": ""
-      }
-    },
-    "kitchen-sink": {
-      "builds": ["boilerplate-lumbar", "hello-world-lumbar"],
-      "directories": {
+        "packages/core/js/lib": "js/lib",
         "packages/bootstrap": "",
         "packages/loading": "",
         "packages/form": "",
         "packages/admin": "",
         "packages/core/js/lib": "public/admin/js/lib",
         "packages/form/js/lib": "public/admin/js/lib"
+      }
+    },
+    "hello-world-lumbar": {
+      "builds": ["boilerplate-lumbar"],
+      "directories": {
+        "packages/hello-world": ""
       }
     },
     "docs": {
