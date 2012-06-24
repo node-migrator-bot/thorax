@@ -51,7 +51,14 @@ function buildPackage(name, target, complete) {
     }));
 
     async.forEachSeries(directives, function(fileInfo, next) {
-      execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + (!fileInfo.isFile ? '/' : '') + ' ' + path.join(target, fileInfo.targetPath)], next);
+      function copy() {
+        execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + (!fileInfo.isFile ? '/' : '') + ' ' + path.join(target, fileInfo.targetPath)], next);
+      }
+      if (!path.existsSync(path.join(target, fileInfo.targetPath))) {
+        mkdirp(path.join(target, fileInfo.targetPath), copy)
+      } else {
+        copy();
+      }
     }, function() {
       if (path.existsSync(lumbarJSONLocation)) {
         deepExtend(lumbarJSONByTarget[lumbarJSONLocation], JSON.parse(fs.readFileSync(lumbarJSONLocation)));
