@@ -109,5 +109,5 @@ buildAllPackages();
 var watchCallback = _.throttle(function(event) {
   buildAllPackages();
 }, 1000);
-watchTree(path.join(__dirname, '..', 'static'), watchCallback);
+watchTree(path.join(__dirname, '..', 'packages'), watchCallback);
 watchTree(path.join(__dirname, '..', 'lib'), watchCallback);

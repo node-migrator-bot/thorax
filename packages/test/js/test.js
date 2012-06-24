@@ -242,6 +242,14 @@ $(function() {
     });
     view.render();
     equal(view.$('li').length, letterCollection.models.length * 2);
+
+    var view = new Application.View({
+      template: '{{#collection a tag="ul"}}<li>{{letter}}</li>{{/collection}}{{#collection a tag="div"}}<span>{{letter}}</span>{{/collection}}',
+      a: new Application.Collection(letterCollection.models)
+    });
+    view.render();
+    equal(view.$('li').length, letterCollection.models.length);
+    equal(view.$('span').length, letterCollection.models.length);
   });
 
   test("inverse block in collection helper", function() {
@@ -263,10 +271,12 @@ $(function() {
       letters: new Application.Collection()
     });
     a.render();
+    var oldRenderCount = a._renderCount;
     equal(a.$('.empty').html(), 'empty');
     a.letters.reset(letterCollection.models);
     equal(a.$('.empty').length, 0);
     equal(a.$('[data-collection-cid] div')[0].innerHTML, 'a');
+    equal(oldRenderCount, a._renderCount, 'render count unchanged on collection reset');
 
     b.render();
     equal(b.$('.empty').html(), 'empty a');

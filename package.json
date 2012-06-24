@@ -29,57 +29,57 @@
     "base": {
       "files": {
         "lib/thorax.js": "thorax.js",
-        "static/loading/js/lib/thorax.loading.js": "thorax.loading.js"
+        "packages/loading/js/lib/thorax.loading.js": "thorax.loading.js"
       }
     },
     "boilerplate-html": {
       "directories": {
-        "static/boilerplate-html": "",
+        "packages/boilerplate-html": "",
         "lib": "js/lib"
       }
     },
     "boilerplate-lumbar": {
       "directories": {
-        "static/boilerplate-lumbar": "",
+        "packages/boilerplate-lumbar": "",
         "lib": "js/lib"
       }
     },
     "hello-world-lumbar": {
       "builds": ["boilerplate-lumbar"],
       "directories": {
-        "static/hello-world": ""
+        "packages/hello-world": ""
       }
     },
     "kitchen-sink": {
       "builds": ["boilerplate-lumbar", "hello-world-lumbar"],
       "directories": {
-        "static/bootstrap": "",
-        "static/loading": "",
-        "static/form": "",
-        "static/admin": "",
+        "packages/bootstrap": "",
+        "packages/loading": "",
+        "packages/form": "",
+        "packages/admin": "",
         "lib": "public/admin/js/lib",
-        "static/form/js/lib": "public/admin/js/lib"
+        "packages/form/js/lib": "public/admin/js/lib"
       }
     },
     "docs": {
       "builds": ["boilerplate-lumbar"],
       "directories": {
-        "static/bootstrap": "",
-        "static/loading": "",
-        "static/form": "",
-        "static/docs": ""
+        "packages/bootstrap": "",
+        "packages/loading": "",
+        "packages/form": "",
+        "packages/docs": ""
       }
     },
     "test": {
       "directories": {
-        "static/test": "",
+        "packages/test": "",
         "lib": "js/lib"
       },
       "files": {
-        "static/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js",
-        "static/form/js/lib/thorax.form.js": "js/lib/thorax.form.js",
-        "static/form/js/lib/thorax.form-validation.js": "js/lib/thorax.form-validation.js",
-        "static/form/js/lib/thorax.form-helpers.js": "js/lib/thorax.form-helpers.js"
+        "packages/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js",
+        "packages/form/js/lib/thorax.form.js": "js/lib/thorax.form.js",
+        "packages/form/js/lib/thorax.form-validation.js": "js/lib/thorax.form-validation.js",
+        "packages/form/js/lib/thorax.form-helpers.js": "js/lib/thorax.form-helpers.js"
       }
     }
   }

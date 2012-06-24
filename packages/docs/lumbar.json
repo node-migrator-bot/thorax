@@ -11,6 +11,9 @@
       },
       "scripts": [
         {
+          "src": "js/views/docs/navigation.js"
+        },
+        {
           "src": "js/views/docs/index.js"
         },
         {
@@ -54,6 +57,9 @@
     ],
     "js/views/docs/examples.js": [
       "templates/docs/examples.handlebars"
+    ],
+    "js/views/docs/navigation.js": [
+      "templates/docs/navigation.handlebars"
     ]
   }
 }
