@@ -3,6 +3,19 @@ _.extend(View, {
     this[name] = callback;
     Handlebars.registerHelper(name, this[name]);
   },
+  registerPartialHelper: function(name, callback) {
+    return View.registerHelper(name, function() {
+      var args = _.toArray(arguments),
+          options = args.pop(),
+          cid = _.uniqueId('partial'),
+          partial = new Partial(cid, this._view, options);
+      args.push(partial);
+      this._view._partials.push(partial);
+      var htmlAttributes = _.extend({}, options.hash);
+      htmlAttributes[partialCidAttributeName] = cid;
+      return new Handlebars.SafeString(View.tag(htmlAttributes, callback.apply(this, args)));
+    });
+  },
   expandToken: function(input, scope) {
     if (input && input.indexOf && input.indexOf('{{') >= 0) {
       var re = /(?:\{?[^{]+)|(?:\{\{([^}]+)\}\})/g,
@@ -86,56 +99,51 @@ View.registerHelper('template', function(name, options) {
   return new Handlebars.SafeString(output);
 });
 
-View.registerHelper('collection', function(collection, options) {
-  //DEPRECATION: backwards compatibility with < 1.3
+View.registerPartialHelper('empty', function(collection, partial) {
+  var empty, noArgument;
   if (arguments.length === 1) {
-    options = collection;
-    collection = this._view.collection;
+    partial = collection;
+    collection = false;
+    noArgument = true;
   }
-  //end DEPRECATION
-  if (collection) {
-    var collectionOptionsToExtend = {
-      'item-template': options.fn && options.fn !== Handlebars.VM.noop ? options.fn : options.hash['item-template'],
-      'empty-template': options.inverse && options.inverse !== Handlebars.VM.noop ? options.inverse : options.hash['empty-template'],
-      'item-view': options.hash['item-view'],
-      'empty-view': options.hash['empty-view'],
-      filter: options.hash['filter']
-    };
-    ensureCollectionIsBound.call(this._view, collection, collectionOptionsToExtend);
-    var collectionHelperOptions = _.clone(options.hash);
-    _.keys(collectionOptionsToExtend).forEach(function(key) {
-      delete collectionHelperOptions[key];
-    });
-    collectionHelperOptions[collectionCidAttributeName] = collection.cid;
-    if (collection.name) {
-      collectionHelperOptions[collectionNameAttributeName] = collection.name;
-    }
-    return new Handlebars.SafeString(View.tag.call(this, collectionHelperOptions, null, this));
-  } else {
-    return '';
-  }
-});
 
-View.registerHelper('empty', function(collection, options) {
-  var empty;
-  if (!options) {
-    options = arguments[0];
-    empty = !this._view.model || (this._view.model && !this._view.model.isEmpty());
-  } else {
-    if (!collection) {
+  function callback(context) {
+    if (noArgument) {
+      empty = !partial.view.model || (partial.view.model && !partial.view.model.isEmpty());
+    } else if (!collection) {
       empty = true;
     } else {
-      ensureCollectionIsBound.call(this._view, collection);
       empty = collection.isEmpty();
-      this._view._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange = true;
+    }
+    if (empty) {
+      console.log('here',partial,partial.view);
+      partial.view.trigger('rendered:empty', collection);
+      return partial.fn(context);
+    } else {
+      return partial.inverse(context);
     }
   }
-  if (empty) {
-    this._view.trigger('rendered:empty', collection);
-    return options.fn(this);
-  } else {
-    return options.inverse(this);
+
+  if (arguments.length === 2 && collection) {
+    function collectionRemoveCallback() {
+      if (collection.length === 0) {
+        partial.html(callback(partial.context()));
+      }
+    }
+    function collectionAddCallback() {
+      if (collection.length === 1) {
+        partial.html(callback(partial.context()));
+      }
+    }
+    collection.on('remove', collectionRemoveCallback);
+    collection.on('add', collectionAddCallback);
+    partial.bind('destroyed', function() {
+      collection.off('remove', collectionRemoveCallback);
+      collection.off('add', collectionAddCallback);
+    });
   }
+
+  return callback(this);
 });
 
 View.registerHelper('url', function(url) {
@@ -146,59 +154,3 @@ View.registerHelper('layout', function(options) {
   options.hash[layoutCidAttributeName] = this._view.cid;
   return new Handlebars.SafeString(View.tag.call(this, options.hash, null, this));
 });
-
-View.registerPartialHelper = function() {
-
-};
-
-View.registerPartialHelper('collection', function() {
-
-});
-
-View.registerHelper('partial', function(name, options) {
-  this._view._partials || (this._view._partials = {});
-  this._view._partials[name] = this._view[name];
-  //if anonymous is true the partial and the method wrapper
-  //will both be deleted on the next render
-  if (options.hash.anonymous) {
-    this._view._partials[name].anonymous = true;
-    delete options.hash.anonymous;
-  }
-  this._view[name] = function(callOptions) {
-    var optionsForCallback = options;
-    if (callOptions) {
-      optionsForCallback = _.extend({}, options);
-      optionsForCallback.hash = _.extend({}, options.hash, callOptions.hash || callOptions);
-    }
-    var output = this._partials[name].call(this, wrapPartialOptionsBlockCallback(optionsForCallback));
-    this.$('[' + partialAttributeName + '="' + name + '"]').html(output);
-  }
-  options.hash[partialAttributeName] = name;
-  return new Handlebars.SafeString(View.tag(options.hash, this._view._partials[name].call(this._view, wrapPartialOptionsBlockCallback(options)), this));
-});
-
-function wrapPartialOptionsBlockCallback(options) {
-  if (options && options.fn) {
-    var callback = options.fn;
-    options.fn = function(scope) {
-      return callback(getTemplateContext(scope));
-    };
-  }
-  return options;
-}
-
-function unbindPartialsOfType(type) {
-
-}
-
-function unbindPartials() {
-  for (var name in (this._partials || {})) {
-    if (!this._partials[name].anonymous) {
-      this[name] = this._partials[name];
-    } else {
-      delete this[name];
-    }
-    delete this._partials[name];
-  }
-}
-

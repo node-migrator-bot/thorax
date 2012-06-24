@@ -1,6 +1,6 @@
 _.extend(View.prototype, {
   render: function(output) {
-    unbindPartials.call(this);
+    destroyPartials.call(this);
     if (typeof output === 'undefined' || (!_.isElement(output) && !is$(output) && !(output && output.el) && typeof output !== 'string')) {
       output = this.renderTemplate(this._template || getViewName.call(this), this._getContext(this.model));
     } else if (typeof output === 'function') {

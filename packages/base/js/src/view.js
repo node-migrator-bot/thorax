@@ -5,7 +5,7 @@ var View = function(options) {
   this.cid = _.uniqueId('view');
   _viewsIndexedByCid[this.cid] = this;
   this._boundCollectionsByCid = {};
-  this._partials = {};
+  this._partials = [];
   this._renderCount = 0;
   this._configure(options || {});
   this._ensureElement();
@@ -105,24 +105,12 @@ _.extend(View.prototype, Backbone.View.prototype, {
     this.collection = null;
     this.model = null;
     delete _viewsIndexedByCid[this.cid];
-    destroyChildViews.call(this);
+    //destroy child views
+    for (var id in this._views || {}) {
+      if (this._views[id].destroy) {
+        this._views[id].destroy();
+      }
+      this._views[id] = null;
+    }
   }
 });
-
-function getViewName(silent) {
-  var name = this.name;
-  if ((!name && !silent)) {
-    throw new Error(this.cid + " requires a 'name' or 'template' attribute in order to be rendered.");
-  } else if (name) {
-    return name;
-  }
-}
-
-function destroyChildViews() {
-  for (var id in this._views || {}) {
-    if (this._views[id].destroy) {
-      this._views[id].destroy();
-    }
-    this._views[id] = null;
-  }
-}

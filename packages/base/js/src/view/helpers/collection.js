@@ -8,9 +8,6 @@ internalViewEvents.collection = {
         collection_element.removeAttr(collectionEmptyAttributeName);
         collection_element.empty();
       }
-      if (collectionOptions.renderOnEmptyStateChange) {
-        this.render();
-      }
     }
     if (collection_element.length) {
       var index = collection.indexOf(model);
@@ -40,9 +37,6 @@ internalViewEvents.collection = {
         collection_element.attr(collectionEmptyAttributeName, true);
         appendEmpty.call(this, collection);
       }
-      if (this._collectionOptionsByCid[collection.cid].renderOnEmptyStateChange) {
-        this.render();
-      }
     }
   },
   reset: function(collection) {
@@ -54,6 +48,36 @@ internalViewEvents.collection = {
     }
   }
 };
+
+View.registerHelper('collection', function(collection, options) {
+  //DEPRECATION: backwards compatibility with < 1.3
+  if (arguments.length === 1) {
+    options = collection;
+    collection = this._view.collection;
+  }
+  //end DEPRECATION
+  if (collection) {
+    var collectionOptionsToExtend = {
+      'item-template': options.fn && options.fn !== Handlebars.VM.noop ? options.fn : options.hash['item-template'],
+      'empty-template': options.inverse && options.inverse !== Handlebars.VM.noop ? options.inverse : options.hash['empty-template'],
+      'item-view': options.hash['item-view'],
+      'empty-view': options.hash['empty-view'],
+      filter: options.hash['filter']
+    };
+    ensureCollectionIsBound.call(this._view, collection, collectionOptionsToExtend);
+    var collectionHelperOptions = _.clone(options.hash);
+    _.keys(collectionOptionsToExtend).forEach(function(key) {
+      delete collectionHelperOptions[key];
+    });
+    collectionHelperOptions[collectionCidAttributeName] = collection.cid;
+    if (collection.name) {
+      collectionHelperOptions[collectionNameAttributeName] = collection.name;
+    }
+    return new Handlebars.SafeString(View.tag.call(this, collectionHelperOptions, null, this));
+  } else {
+    return '';
+  }
+});
 
 _.extend(View.prototype, {
   bindCollection: function(collection, options) {

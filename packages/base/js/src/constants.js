@@ -10,7 +10,7 @@ var handlebarsExtension = 'handlebars',
     collectionCidAttributeName = 'data-collection-cid',
     collectionNameAttributeName = 'data-collection-name',
     collectionEmptyAttributeName = 'data-collection-empty',
-    partialAttributeName = 'data-partial-name',
+    partialCidAttributeName = 'data-partial-cid',
     oldBackboneView = Backbone.View,
     //android scrollTo(0, 0) shows url bar, scrollTo(0, 1) hides it
     minimumScrollYOffset = (navigator.userAgent.toLowerCase().indexOf("android") > -1) ? 1 : 0,
