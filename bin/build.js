@@ -54,7 +54,7 @@ function buildPackage(name, target, complete) {
       function copy() {
         execute(['cp -r ' + path.join(__dirname, '..', fileInfo.sourcePath) + (!fileInfo.isFile ? '/' : '') + ' ' + path.join(target, fileInfo.targetPath)], next);
       }
-      if (!path.existsSync(path.join(target, fileInfo.targetPath))) {
+      if (!path.existsSync(path.join(target, fileInfo.targetPath)) && !fileInfo.isFile) {
         mkdirp(path.join(target, fileInfo.targetPath), copy)
       } else {
         copy();
