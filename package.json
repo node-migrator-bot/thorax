@@ -28,7 +28,11 @@
   "builds": {
     "thorax": {
       "sources": [
-        "packages/base/js/src/thorax.js"
+        "packages/base/js/src/header.js",
+        "packages/base/js/src/constants.js",
+        "packages/base/js/src/main.js",
+        "packages/base/js/src/$.js",
+        "packages/base/js/src/footer.js"
       ],
       "target": "thorax.js"
     },
