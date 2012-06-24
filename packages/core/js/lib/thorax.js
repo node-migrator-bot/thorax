@@ -43,6 +43,7 @@
     this.cid = _.uniqueId('view');
     _viewsIndexedByCid[this.cid] = this;
     this._boundCollectionsByCid = {};
+    this._partials = {};
     this._renderCount = 0;
     this._configure(options || {});
     this._ensureElement();
@@ -890,6 +891,14 @@
     return new Handlebars.SafeString(View.tag.call(this, options.hash, null, this));
   });
 
+  View.registerPartialHelper = function() {
+
+  };
+
+  View.registerPartialHelper('collection', function() {
+
+  });
+
   View.registerHelper('partial', function(name, options) {
     this._view._partials || (this._view._partials = {});
     this._view._partials[name] = this._view[name];
@@ -920,6 +929,10 @@
       };
     }
     return options;
+  }
+
+  function unbindPartialsOfType(type) {
+
   }
 
   function unbindPartials() {
@@ -1177,12 +1190,6 @@
   
   var Layout = View.extend({
     destroyViews: true,
-    events: {
-      rendered: function() {
-        //set the layout_cid_attribute_name on this.$el if there was no template
-        getLayoutViewsTargetElement.call(this) || this.$el.attr(layout_cid_attribute_name, this.cid);
-      }
-    },
     _ensureElement : function() {
       Backbone.View.prototype._ensureElement.call(this);
       //need real event delegation, do not contain to current view
@@ -1190,16 +1197,19 @@
     },
 
     render: function(output) {
+      var response;
       //a template is optional in a layout
       var name = getViewName.call(this, true);
       if (output || this._template || (name && this.loadTemplate(name, {}, Thorax.registry))) {
         //but if present, it must have embedded an element containing layout_cid_attribute_name 
-        var response = View.prototype.render.call(this, output);
+        response = View.prototype.render.call(this, output);
         ensureLayoutViewsTargetElement.call(this);
-        return response;
       } else {
         ++this._renderCount;
+        //set the layout_cid_attribute_name on this.$el if there was no template
+        this.$el.attr(layout_cid_attribute_name, this.cid);
       }
+      return response;
     },
 
     setView: function(view, params){

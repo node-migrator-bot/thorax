@@ -35,13 +35,13 @@
     "boilerplate-html": {
       "directories": {
         "packages/boilerplate-html": "",
-        "lib": "js/lib"
+        "packages/core/js/lib": "js/lib"
       }
     },
     "boilerplate-lumbar": {
       "directories": {
         "packages/boilerplate-lumbar": "",
-        "lib": "js/lib"
+        "packages/core/js/lib": "js/lib"
       }
     },
     "hello-world-lumbar": {
@@ -57,7 +57,7 @@
         "packages/loading": "",
         "packages/form": "",
         "packages/admin": "",
-        "lib": "public/admin/js/lib",
+        "packages/core/js/lib": "public/admin/js/lib",
         "packages/form/js/lib": "public/admin/js/lib"
       }
     },
@@ -73,7 +73,7 @@
     "test": {
       "directories": {
         "packages/test": "",
-        "lib": "js/lib"
+        "packages/core/js/lib": "js/lib"
       },
       "files": {
         "packages/loading/js/lib/thorax.loading.js": "js/lib/thorax.loading.js",
