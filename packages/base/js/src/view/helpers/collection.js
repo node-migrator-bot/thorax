@@ -1,30 +1,28 @@
 internalViewEvents.collection = {
-  add: function(model, collection) {
-    var collection_element = this._getCollectionElement(collection),
-        collectionOptions = this._collectionOptionsByCid[collection.cid];
+  add: function(partial, model, collection) {
+    var collectionElement = partial.$el;
+        collectionOptions = partial.options;
     if (collection.length === 1) {
-      if(collection_element.length) {
+      if(collectionElement.length) {
         //note that this is $.empty() and not renderEmpty or other collection functionality
-        collection_element.removeAttr(collectionEmptyAttributeName);
-        collection_element.empty();
+        collectionElement.removeAttr(collectionEmptyAttributeName);
+        collectionElement.empty();
       }
     }
-    if (collection_element.length) {
+    if (collectionElement.length) {
       var index = collection.indexOf(model);
       if (!collectionOptions.filter || collectionOptions.filter &&
         (typeof collectionOptions.filter === 'string'
             ? this[collectionOptions.filter]
             : collectionOptions.filter).call(this, model, index)
         ) {
-        this.appendItem(collection, model, index, {
-          collectionElement: collection_element
-        });
+        this.appendItem(partial, collection, model, index);
       }
     }
   },
-  remove: function(model, collection) {
-    var collection_element = this._getCollectionElement(collection);
-    collection_element.find('[' + modelCidAttributeName + '="' + model.cid + '"]').remove();
+  remove: function(partial, model, collection) {
+    var collectionElement = partial.$el;
+    collectionElement.find('[' + modelCidAttributeName + '="' + model.cid + '"]').remove();
     for (var cid in this._views) {
       if (this._views[cid].model && this._views[cid].model.cid === model.cid) {
         this._views[cid].destroy();
@@ -33,140 +31,113 @@ internalViewEvents.collection = {
       }
     }
     if (collection.length === 0) {
-      if (collection_element.length) {
-        collection_element.attr(collectionEmptyAttributeName, true);
-        appendEmpty.call(this, collection);
+      if (collectionElement.length) {
+        collectionElement.attr(collectionEmptyAttributeName, true);
+        appendEmpty.call(this, partial, collection);
       }
     }
   },
-  reset: function(collection) {
-    onCollectionReset.call(this, collection);
+  reset: function(partial, collection) {
+    onCollectionReset.call(this, partial, collection);
   },
-  error: function(collection, message) {
-    if (this._collectionOptionsByCid[collection.cid].errors) {
+  error: function(partial, collection, message) {
+    if (partial.options.errors) {
       this.trigger('error', message);
     }
   }
 };
 
-View.registerHelper('collection', function(collection, options) {
+View.registerPartialHelper('collection', function(collection, partial) {
   //DEPRECATION: backwards compatibility with < 1.3
   if (arguments.length === 1) {
-    options = collection;
+    partial = collection;
     collection = this._view.collection;
   }
   //end DEPRECATION
   if (collection) {
-    var collectionOptionsToExtend = {
-      'item-template': options.fn && options.fn !== Handlebars.VM.noop ? options.fn : options.hash['item-template'],
-      'empty-template': options.inverse && options.inverse !== Handlebars.VM.noop ? options.inverse : options.hash['empty-template'],
-      'item-view': options.hash['item-view'],
-      'empty-view': options.hash['empty-view'],
-      filter: options.hash['filter']
-    };
-    ensureCollectionIsBound.call(this._view, collection, collectionOptionsToExtend);
-    var collectionHelperOptions = _.clone(options.hash);
-    _.keys(collectionOptionsToExtend).forEach(function(key) {
-      delete collectionHelperOptions[key];
+    _.extend(partial.options, {
+      'item-template': partial.fn && partial.fn !== Handlebars.VM.noop ? partial.fn : partial.options['item-template'],
+      'empty-template': partial.inverse && partial.inverse !== Handlebars.VM.noop ? partial.inverse : partial.options['empty-template'],
+      'item-view': partial.options['item-view'],
+      'empty-view': partial.options['empty-view'],
+      filter: partial.options['filter']
     });
-    collectionHelperOptions[collectionCidAttributeName] = collection.cid;
+    this._view._bindCollection(collection, partial);
+    partial.$el.attr(collectionCidAttributeName, collection.cid);
     if (collection.name) {
-      collectionHelperOptions[collectionNameAttributeName] = collection.name;
+      partial.$el.attr(collectionNameAttributeName, collection.name);
     }
-    return new Handlebars.SafeString(View.tag.call(this, collectionHelperOptions, null, this));
-  } else {
-    return '';
   }
 });
 
 _.extend(View.prototype, {
-  bindCollection: function(collection, options) {
-    var old_collection = this.collection;
+  setCollectionOptions: function(collection, options) {
+    return _.extend({
+      fetch: true,
+      success: false,
+      errors: true
+    }, options || {});
+  },
 
-    if (old_collection) {
-      this.freeze(old_collection);
-    }
-
+  _bindCollection: function(collection, partial) {
+    var oldCollection = this.collection;
     if (collection) {
+      if (!this._boundCollectionsByCid[collection.cid]) {
+        this._boundCollectionsByCid[collection.cid] = collection;
+      }
       collection.cid = collection.cid || _.uniqueId('collection');
-      options = this.setCollectionOptions(collection, options);
-
-      this._boundCollectionsByCid[collection.cid] = collection;
-      this._events.collection.forEach(function(event) {
-        collection.bind(event[0], event[1]);
+      partial.options = this.setCollectionOptions(collection, partial.options);
+      var collectionEvents = this._events.collection,
+          collectionEventCallbacks = [];
+      collectionEvents.forEach(function(event) {
+        function collectionEventCallback() {
+          var args = _.toArray(arguments);
+          args.unshift(partial);
+          return event[1].apply(this, args);
+        }
+        collection.on(event[0], collectionEventCallback);
+        collectionEventCallbacks.push(collectionEventCallback);
       });
-    
-      collection.trigger('set', collection, old_collection);
-
-      if (this._shouldFetch(collection, options)) {
-        this._loadCollection(collection, options);
+      partial.on('freeze', function() {
+        collectionEvents.forEach(function(event, i) {
+          collection.off(event[0], collectionEventCallbacks[i]);
+        });
+        collectionEventCallbacks = [];
+      });
+      collection.trigger('set', collection, oldCollection);
+  
+      if (this._shouldFetch(collection, partial.options)) {
+        this._loadCollection(collection, partial.options);
       } else {
         //want to trigger built in event handler (render())
         //without triggering event on collection
-        onCollectionReset.call(this, collection);
+        onCollectionReset.call(this, partial, collection);
       }
     }
-
+  
     return this;
-  },
-
-  _getCollectionElement: function(collection) {
-    //DEPRECATION: this._collectionSelector for backwards compatibility with < 1.3
-    var selector = this._collectionSelector || '[' + collectionCidAttributeName + '="' + collection.cid + '"]';
-    var elements = this.$(selector);
-    if (elements.length > 1) {
-      //TODO: Zepto 1.0 should support jQuery style filter()
-      var cid = this.cid;
-      return $(_.filter(elements, function(element) {
-        return cid === $(element).closest('[' + viewNameAttributeName + ']').attr(viewNameAttributeName);
-      }));
-    } else {
-      return elements;
-    }
   },
 
   _loadCollection: function(collection, options) {
     collection.fetch(options);
   },
 
-  setCollectionOptions: function(collection, options) {
-    if (!this._collectionOptionsByCid) {
-      this._collectionOptionsByCid = {};
-    }
-    this._collectionOptionsByCid[collection.cid] = {
-      fetch: true,
-      success: false,
-      errors: true
-    };
-    _.extend(this._collectionOptionsByCid[collection.cid], options || {});
-    return this._collectionOptionsByCid[collection.cid];
-  },
-
-  //appendItem(collection, model [,index])
-  //appendItem(collection, html_string, index)
-  //appendItem(collection, view, index)
-  appendItem: function(collection, model, index, options) {
-    //DEPRECATION: backwards compatibility with < 1.3
-    if (typeof collection.length === 'undefined' && !collection.models) {
-      collection = this.collection;
-      model = arguments[0];
-      index = arguments[1];
-      options = arguments[2];
-    }
-
+  //appendItem(partial, collection, model [,index])
+  //appendItem(partial, collection, html_string, index)
+  //appendItem(partial, collection, view, index)
+  appendItem: function(partial, collection, model, index, options) {
     //empty item
     if (!model) {
       return;
     }
 
-    var item_view,
-        collection_element = (options && options.collectionElement) || this._getCollectionElement(collection);
+    var item_view, collectionElement = partial.$el;
 
     options = options || {};
 
     //if index argument is a view
     if (index && index.el) {
-      index = collection_element.children().indexOf(index.el) + 1;
+      index = collectionElement.children().indexOf(index.el) + 1;
     }
 
     //if argument is a view, or html string
@@ -175,7 +146,7 @@ _.extend(View.prototype, {
       model = false;
     } else {
       index = index || collection.indexOf(model) || 0;
-      item_view = this.renderItem(model, index, collection);
+      item_view = this.renderItem(partial, model, index, collection);
     }
 
     if (item_view) {
@@ -199,12 +170,13 @@ _.extend(View.prototype, {
       if (model) {
         $(item_element).attr(modelCidAttributeName, model.cid);
       }
+
       var previous_model = index > 0 ? collection.at(index - 1) : false;
       if (!previous_model) {
-        collection_element.prepend(item_element);
+        collectionElement.prepend(item_element);
       } else {
         //use last() as appendItem can accept multiple nodes from a template
-        collection_element.find('[' + modelCidAttributeName + '="' + previous_model.cid + '"]').last().after(item_element);
+        collectionElement.find('[' + modelCidAttributeName + '="' + previous_model.cid + '"]').last().after(item_element);
       }
 
       appendViews.call(this, item_element);
@@ -217,76 +189,53 @@ _.extend(View.prototype, {
   }
 });
 
-function ensureCollectionIsBound(collection, options) {
-  if (!this._boundCollectionsByCid[collection.cid]) {
-    this.bindCollection(collection, options);
-  } else if (options) {
-    _.extend(this._collectionOptionsByCid[collection.cid], options);
-  }
+function onCollectionReset(partial, collection) {
+  this.renderCollection(partial, collection);
 }
 
-function onCollectionReset(collection) {
-  this.renderCollection(collection);
-}
-
-function preserveCollectionElements(callback) {
-  var old_collection_elements_by_cid = {},
-      cid;
-  for (cid in this._boundCollectionsByCid) {
-    old_collection_elements_by_cid[cid] = this._getCollectionElement(this._boundCollectionsByCid[cid]);
-  }
-  callback.call(this);
-  for (cid in this._boundCollectionsByCid) {
-    var new_collection_element = this._getCollectionElement(this._boundCollectionsByCid[cid]),
-        old_collection_element = old_collection_elements_by_cid[cid];
-    if (old_collection_element.length && new_collection_element.length) {
-      new_collection_element[0].parentNode.insertBefore(old_collection_element[0], new_collection_element[0]);
-      new_collection_element[0].parentNode.removeChild(new_collection_element[0]);
-    }
-  }
-}
-
-function renderCollection(collection) {
+function renderCollection(partial, collection) {
   //DEPRECATION: backwards compatibility with < 1.3
   if (!collection) {
     collection = this.collection;
   }
   //end DEPRECATION
-  this.render();
-  var collection_element = this._getCollectionElement(collection).empty();
+  var collectionElement = partial.$el;
+  collectionElement.empty();
   if (collection.isEmpty()) {
-    collection_element.attr(collectionEmptyAttributeName, true);
-    appendEmpty.call(this, collection);
+    collectionElement.attr(collectionEmptyAttributeName, true);
+    appendEmpty.call(this, partial, collection);
   } else {
-    var collectionOptions = this._collectionOptionsByCid[collection.cid];
-    collection_element.removeAttr(collectionEmptyAttributeName);
+    var collectionOptions = partial.options;
+    collectionElement.removeAttr(collectionEmptyAttributeName);
     collection.forEach(function(item, i) {
       if (!collectionOptions.filter || collectionOptions.filter &&
         (typeof collectionOptions.filter === 'string'
             ? this[collectionOptions.filter]
             : collectionOptions.filter).call(this, item, i)
         ) {
-        this.appendItem(collection, item, i, {
-          collectionElement: collection_element
-        });
+        this.appendItem(partial, collection, item, i);
       }
     }, this);
   }
-  this.trigger('rendered:collection', collection_element, collection);
+  this.trigger('rendered:collection', collectionElement, collection);
 }
 
-function renderEmpty(collection) {
+function renderEmpty(partial, collection) {
   if (!collection) {
     collection = this.collection;
   }
-  var collection_options = this._collectionOptionsByCid[collection.cid],
+  var collectionOptions = partial.options,
       context = this.emptyContext();
-  if (collection_options['empty-view']) {
-    var view = this.view(collection_options['empty-view'], context);
-    view.render(collection_options['empty-template']);
+  if (collectionOptions['empty-view']) {
+    var view = this.view(collectionOptions['empty-view'], context);
+    if (collectionOptions['empty-template']) {
+      view.render(view.renderTemplate(collectionOptions['empty-template'], context));
+    } else {
+      view.render();
+    }
     return view;
   } else {
-    var emptyTemplate = collection_options['empty-template'];
+    var emptyTemplate = collectionOptions['empty-template'];
     if (!emptyTemplate) {
       var name = getViewName.call(this, true);
       if (name) {
@@ -296,32 +245,35 @@ function renderEmpty(collection) {
         return;
       }
     }
+    return this.renderTemplate(emptyTemplate, context);
   }
-  return this.renderTemplate(emptyTemplate, context);
 }
 
-function renderItem(item, i, collection) {
+function renderItem(partial, item, i, collection) {
   if (!collection) {
     collection = this.collection;
   }
-  var collection_options = this._collectionOptionsByCid[collection.cid];
-  if (collection_options['item-view']) {
-    var view = this.view(collection_options['item-view'], {
+  var collectionOptions = partial.options;
+  if (collectionOptions['item-view']) {
+    var view = this.view(collectionOptions['item-view'], {
       model: item
     });
-    view.render(collection_options['item-template']);
+    if (collectionOptions['item-template']) {
+      view.render(this.renderTemplate(collectionOptions['item-template'], this.itemContext(item, i)));
+    } else {
+      view.render();
+    }
     return view;
   } else {
-    var context = this.itemContext(item, i);
-    return this.renderTemplate(collection_options['item-template'] || getViewName.call(this) + '-item', context);
+    return this.renderTemplate(collectionOptions['item-template'] || getViewName.call(this) + '-item', this.itemContext(item, i));
   }
 }
 
-function appendEmpty(collection) {
-  var collection_element = this._getCollectionElement(collection).empty();
-  this.appendItem(collection, this.renderEmpty(collection), 0, {
-    silent: true,
-    collectionElement: collection_element
+function appendEmpty(partial, collection) {
+  var collectionElement = partial.$el;
+  collectionElement.empty();
+  this.appendItem(partial, collection, this.renderEmpty(partial, collection), 0, {
+    silent: true
   });
   this.trigger('rendered:empty', collection);
 }

@@ -340,15 +340,9 @@ _.extend(Thorax.View.prototype, {
       exports.trigger(loadStart, message, background, object);
     }
     $(this.el).addClass(this._loadingClassName);
-    if (this._renderOnLoadStart) {
-      this.render();
-    }
   },
   onLoadEnd: function(background, object) {
     $(this.el).removeClass(this._loadingClassName);
-    if (this._renderOnLoadEnd) {
-      this.render();
-    }
   }
 });
 
@@ -362,7 +356,7 @@ Thorax.View.registerEvents({
       }),
 
   collection: {
-    'load:start': function(message, background, object) {
+    'load:start': function(partial, message, background, object) {
       this.trigger(loadStart, message, background, object);
     }
   },
@@ -373,19 +367,33 @@ Thorax.View.registerEvents({
   }
 });
 
-Thorax.View.registerHelper('loading', function(collectionOrModel, options) {
+Thorax.View.registerPartialHelper('loading', function(collectionOrModel, partial) {
   if (arguments.length === 1) {
-    options = collectionOrModel;
+    partial = collectionOrModel;
     collectionOrModel = false;
   }
-  var view = this._view;
-  view._renderOnLoadStart = true;
-  view._renderOnLoadEnd = true;
-  if ($(this.el).hasClass(this._loadingClassName)) {
-    return options.fn(this);
-  } else {
-    return options.inverse(this);
+
+  function callback(scope) {
+    var content;
+    if (partial.view.$el.hasClass(partial.view._loadingClassName)) {
+      content = options.fn(scope || partial.context());
+    } else {
+      content = options.inverse(scope || partial.context());
+    }
+    partial.html(content);
   }
+
+  var target = collectionOrModel || partial.view;
+
+  target.on(loadStart, callback);
+  target.on(loadEnd, callback);
+
+  partial.bind('freeze', function() {
+    target.off(loadStart, callback);
+    target.off(loadEnd, callback);
+  });
+
+  callback(this);
 });
 
 var oldCollectionHelper = Handlebars.helpers.collection;

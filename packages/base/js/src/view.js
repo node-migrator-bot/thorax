@@ -5,7 +5,7 @@ var View = function(options) {
   this.cid = _.uniqueId('view');
   _viewsIndexedByCid[this.cid] = this;
   this._boundCollectionsByCid = {};
-  this._partials = [];
+  this._partials = {};
   this._renderCount = 0;
   this._configure(options || {});
   this._ensureElement();

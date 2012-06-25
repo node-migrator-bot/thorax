@@ -28,7 +28,7 @@ $(function(){
     var spy = this.spy(),
         collection = new Application.Collection({url: 'foo'}),
         view = new Application.View({name: 'food', render: function(){}, renderItem: function() {}, collection: collection});
-    view.bindCollection(collection);
+    view._bindCollection(collection, view.partial());
     view.bind('load:start', spy);
   
     ok(!$(view.el).hasClass('loading'));
@@ -72,7 +72,7 @@ $(function(){
     var collection = new Application.Collection({url: 'foo'}),
         view = new Application.View({name: 'food', render: function(){}, renderItem: function() {}, collection: collection}),
         spy = this.spy(view, 'onLoadEnd');
-    view.bindCollection(collection);
+    view._bindCollection(collection, view._partial());
     collection.loadStart();
     this.clock.tick(1000);
   

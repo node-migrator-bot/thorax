@@ -54,13 +54,9 @@ _.extend(View.prototype, {
         this.model.unbind(event[0], event[1]);
       }, this);
     }
-    for (var cid in this._boundCollectionsByCid) {
-      if (!modelOrCollection || this._boundCollectionsByCid[cid] === modelOrCollection) {
-        this._events.collection.forEach(function(event) {
-          this._boundCollectionsByCid[cid].unbind(event[0], event[1]);
-        }, this);
-      }
-    }
+    _.each(this._partials, function(partial, cid) {
+      partial.freeze();
+    });
   }
 });
 

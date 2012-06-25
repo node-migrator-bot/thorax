@@ -99,14 +99,14 @@ $(function() {
 
   //DEPRECATION: supports syntax for < 1.3
   test("collection view binding", function() {
-    function runCollectionTests(view, indexMultiplier) {
+    function runCollectionTests(view, indexMultiplier, msg) {
+      msg += ' : ';
       function matchCids(collection) {
         collection.forEach(function(model) {
           equal(view.$('[data-model-cid="' + model.cid + '"]').length, 1 * indexMultiplier, 'match CIDs');
         });
       }
-
-      ok(!view.el.firstChild, 'no render until setCollection');
+      ok(!view.el.firstChild, msg + 'no render until setCollection');
       var clonedLetterCollection = new Application.Collection(letterCollection.models),
           renderedItemCount = 0,
           renderedCollectionCount = 0,
@@ -127,99 +127,99 @@ $(function() {
       });
 
       view.setCollection(clonedLetterCollection);
-      equal(view.$('li').length, 4 * indexMultiplier, 'rendered node length matches collection length');
-      equal(view.$('li')[0 * indexMultiplier].innerHTML + view.$('li')[3 * indexMultiplier].innerHTML, 'ad', 'rendered nodes in correct order');
-      equal(renderedCount, 1, 'rendered event count');
-      equal(renderedCollectionCount, 1, 'rendered:collection event count');
-      equal(renderedItemCount, 4, 'rendered:item event count');
-      equal(renderedEmptyCount, 0, 'rendered:empty event count');
+      equal(view.$('li').length, 4 * indexMultiplier, msg + 'rendered node length matches collection length');
+      equal(view.$('li')[0 * indexMultiplier].innerHTML + view.$('li')[3 * indexMultiplier].innerHTML, 'ad', msg + 'rendered nodes in correct order');
+      equal(renderedCount, 1, msg + 'rendered event count');
+      equal(renderedCollectionCount, 1, msg + 'rendered:collection event count');
+      equal(renderedItemCount, 4, msg + 'rendered:item event count');
+      equal(renderedEmptyCount, 0, msg + 'rendered:empty event count');
       matchCids(clonedLetterCollection);
 
       //reorder
       clonedLetterCollection.remove(clonedLetterCollection.at(0));
-      equal(view.$('li')[0 * indexMultiplier].innerHTML + view.$('li')[2 * indexMultiplier].innerHTML, 'bd', 'rendered nodes in correct order');
+      equal(view.$('li')[0 * indexMultiplier].innerHTML + view.$('li')[2 * indexMultiplier].innerHTML, 'bd', msg + 'rendered nodes in correct order');
       clonedLetterCollection.remove(clonedLetterCollection.at(2));
-      equal(view.$('li')[0 * indexMultiplier].innerHTML + view.$('li')[1 * indexMultiplier].innerHTML, 'bc', 'rendered nodes in correct order');
+      equal(view.$('li')[0 * indexMultiplier].innerHTML + view.$('li')[1 * indexMultiplier].innerHTML, 'bc', msg + 'rendered nodes in correct order');
       clonedLetterCollection.add(new LetterModel({letter: 'e'}));
-      equal(view.$('li')[2 * indexMultiplier].innerHTML, 'e', 'collection and nodes maintain sort order');
+      equal(view.$('li')[2 * indexMultiplier].innerHTML, 'e', msg + 'collection and nodes maintain sort order');
       clonedLetterCollection.add(new LetterModel({letter: 'a'}), {at: 0});
-      equal(view.$('li')[0 * indexMultiplier].innerHTML, 'a', 'collection and nodes maintain sort order');
-      equal(renderedCount, 1, 'rendered event count');
-      equal(renderedCollectionCount, 1, 'rendered:collection event count');
-      equal(renderedItemCount, 6, 'rendered:item event count');
-      equal(renderedEmptyCount, 0, 'rendered:empty event count');
+      equal(view.$('li')[0 * indexMultiplier].innerHTML, 'a', msg + 'collection and nodes maintain sort order');
+      equal(renderedCount, 1, msg + 'rendered event count');
+      equal(renderedCollectionCount, 1, msg + 'rendered:collection event count');
+      equal(renderedItemCount, 6, msg + 'rendered:item event count');
+      equal(renderedEmptyCount, 0, msg + 'rendered:empty event count');
       matchCids(clonedLetterCollection);
 
       //empty
       clonedLetterCollection.remove(clonedLetterCollection.models);
-      equal(view.$('li')[0].innerHTML, 'empty', 'empty collection renders empty');
+      equal(view.$('li')[0].innerHTML, 'empty', msg + 'empty collection renders empty');
       clonedLetterCollection.add(new LetterModel({letter: 'a'}));
-      equal(view.$('li').length, 1 * indexMultiplier, 'transition from empty to one item');
-      equal(view.$('li')[0 * indexMultiplier].innerHTML, 'a', 'transition from empty to one item');
-      equal(renderedCount, 1, 'rendered event count');
-      equal(renderedCollectionCount, 1, 'rendered:collection event count');
-      equal(renderedItemCount, 7, 'rendered:item event count');
-      equal(renderedEmptyCount, 1, 'rendered:empty event count');
+      equal(view.$('li').length, 1 * indexMultiplier, msg + 'transition from empty to one item');
+      equal(view.$('li')[0 * indexMultiplier].innerHTML, 'a', msg + 'transition from empty to one item');
+      equal(renderedCount, 1, msg + 'rendered event count');
+      equal(renderedCollectionCount, 1, msg + 'rendered:collection event count');
+      equal(renderedItemCount, 7, msg + 'rendered:item event count');
+      equal(renderedEmptyCount, 1, msg + 'rendered:empty event count');
       matchCids(clonedLetterCollection);
 
       var oldLength = view.$('li').length;
       clonedLetterCollection.reset(clonedLetterCollection.models);
-      equal(oldLength, view.$('li').length, 'Reset does not cause change in number of rendered items')
+      equal(oldLength, view.$('li').length, msg + 'Reset does not cause change in number of rendered items')
 
       //freeze
       view.freeze();
       clonedLetterCollection.remove(clonedLetterCollection.models);
-      equal(renderedEmptyCount, 1, 'rendered:empty event count');
-      equal(view.$('li')[0 * indexMultiplier].innerHTML, 'a', 'transition from empty to one item');
+      equal(renderedEmptyCount, 1, msg + 'rendered:empty event count');
+      equal(view.$('li')[0 * indexMultiplier].innerHTML, 'a', msg + 'transition from empty to one item');
     }
 
-    runCollectionTests(new LetterCollectionView(), 1);
-
+    runCollectionTests(new LetterCollectionView(), 1, 'base');
+    
     var viewReturningItemView = new (LetterCollectionView.extend({
-      renderItem: function(model, i) {
+      renderItem: function(partial, model, i) {
         return new LetterItemView({model: model});
       }
     }));
-    runCollectionTests(viewReturningItemView, 1);
-
+    runCollectionTests(viewReturningItemView, 1, 'renderItem returning LetterItemView');
+    
     var viewReturningMixed = new (LetterCollectionView.extend({
-      renderItem: function(model, i) {
+      renderItem: function(partial, model, i) {
         return i % 2 === 0 ? new LetterItemView({model: model}) : this.template(this.name + '-item', model.attributes);
       }
     }));
-    runCollectionTests(viewReturningMixed, 1);
-
+    runCollectionTests(viewReturningMixed, 1, 'renderItem returning mixed');
+    
     var viewReturningMultiple = new (LetterCollectionView.extend({
-      renderItem: function(model, i) {
+      renderItem: function(partial, model, i) {
         return this.template('letter-multiple-item', model.attributes);
       }
     }));
-    runCollectionTests(viewReturningMultiple, 2);
-
+    runCollectionTests(viewReturningMultiple, 2, 'renderItem returning string');
+    
     var viewWithBlockCollectionHelper = new Application.View({
       template: '{{#collection tag="ul" empty-template="letter-empty"}}<li>{{letter}}</li>{{/collection}}'
     });
-    runCollectionTests(viewWithBlockCollectionHelper, 1);
-
+    runCollectionTests(viewWithBlockCollectionHelper, 1, 'block helper');
+    
     var viewWithBlockCollectionHelperWithViews = new Application.View({
       template: '{{collection tag="ul" empty-template="letter-empty" item-view="letter-item"}}'
     });
-    runCollectionTests(viewWithBlockCollectionHelperWithViews, 1);
+    runCollectionTests(viewWithBlockCollectionHelperWithViews, 1, 'block helper with item-view');
 
     var viewWithBlockCollectionHelperWithViewsAndBlock = new Application.View({
       template: '{{#collection tag="ul" empty-template="letter-empty" item-view="letter-item"}}<li class="testing">{{letter}}</li>{{/collection}}'
     });
-    runCollectionTests(viewWithBlockCollectionHelperWithViewsAndBlock, 1);
+    runCollectionTests(viewWithBlockCollectionHelperWithViewsAndBlock, 1, 'block helper with item-view and fn');
 
     var viewWithCollectionHelperWithEmptyView = new Application.View({
       template: '{{collection tag="ul" empty-view="letter-empty" item-template="letter-item"}}'
     });
-    runCollectionTests(viewWithCollectionHelperWithEmptyView, 1);
-
+    runCollectionTests(viewWithCollectionHelperWithEmptyView, 1, 'block helper with item-template');
+    
     var viewWithCollectionHelperWithEmptyViewAndBlock = new Application.View({
-      template: '{{collection tag="ul" empty-templatve="letter-empty" empty-view="letter-empty" item-template="letter-item"}}'
+      template: '{{collection tag="ul" empty-template="letter-empty" empty-view="letter-empty" item-template="letter-item"}}'
     });
-    runCollectionTests(viewWithCollectionHelperWithEmptyViewAndBlock, 1);
+    runCollectionTests(viewWithCollectionHelperWithEmptyViewAndBlock, 1, 'block helper with empty view and block');
   });
 
   test("multiple collections", function() {
@@ -270,7 +270,7 @@ $(function() {
       template: '{{#empty letters}}<div class="empty">empty a</div>{{/empty}}{{#collection letters}}{{letter}}{{else}}empty b{{/collection}}',
       letters: new Application.Collection()
     });
-    a.render();
+    a.render(); 
     var oldRenderCount = a._renderCount;
     equal(a.$('.empty').html(), 'empty');
     a.letters.reset(letterCollection.models);

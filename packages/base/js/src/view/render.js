@@ -60,16 +60,8 @@ _.extend(View.prototype, {
     if (typeof html === 'undefined') {
       return this.el.innerHTML;
     } else {
-      var element;
-      if (this._renderCount) {
-        //preserveCollectionElements calls the callback after it has a reference
-        //to the collection element, calls the callback, then re-appends the element
-        preserveCollectionElements.call(this, function() {
-          element = this.$el.html(html);
-        });
-      } else {
-        element = this.$el.html(html);
-      }
+      var element = this.$el.html(html);
+      appendPartials.call(this);
       appendViews.call(this);
       return element;
     }
@@ -84,28 +76,5 @@ function getTemplateContext(data) {
   return _.extend({}, this, data || {}, {
     cid: _.uniqueId('t'),
     _view: this
-  });
-}
-
-function appendViews(scope) {
-  var self = this;
-  if (!self._views) {
-    return;
-  }
-  _.toArray($('[' + viewPlaceholderAttributeName + ']', scope || self.el)).forEach(function(el) {
-    var placeholder_id = el.getAttribute(viewPlaceholderAttributeName),
-        cid = placeholder_id.replace(/\-placeholder\d+$/, '');
-        view = self._views[cid];
-    if (view) {
-      //see if the {{#view}} helper declared an override for the view
-      //if not, ensure the view has been rendered at least once
-      if (viewTemplateOverrides[placeholder_id]) {
-        view.render(viewTemplateOverrides[placeholder_id](getTemplateContext.call(view)));
-      } else {
-        ensureRendered.call(view);
-      }
-      el.parentNode.insertBefore(view.el, el);
-      el.parentNode.removeChild(el);
-    }
   });
 }

@@ -1,7 +1,11 @@
 _.extend(View.prototype, {
   setCollection: function(collection, options) {
+    var old_collection = this.collection;
+    if (old_collection) {
+      this.freeze(old_collection);
+    }
     this.collection = collection;
-    this.bindCollection(collection, options);
+    this.render();
   },
   renderCollection: renderCollection,
   renderEmpty: renderEmpty,
