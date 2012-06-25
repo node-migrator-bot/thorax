@@ -564,8 +564,10 @@ _.extend(View.prototype, {
       return this.el.innerHTML;
     } else {
       var element = this.$el.html(html);
+      //TODO: find better solution for problem of partials embedding views embedding partials embedding....
       appendPartials.call(this);
       appendViews.call(this);
+      appendPartials.call(this);
       return element;
     }
   }
@@ -606,8 +608,10 @@ _.extend(Partial.prototype, Backbone.Events, {
     } else {
       //html may be a SafeString, so call toString()
       var element = this.$el.html(html.toString());
+      //TODO: find better solution for problem of partials embedding views embedding partials embedding....
       appendPartials.call(this.view, this.el);
-      appendViews.call(this.view, this.el, true);
+      appendViews.call(this.view, this.el);
+      appendPartials.call(this.view, this.el);
       return element;
     }
   },
@@ -779,7 +783,7 @@ View.registerHelper('view', function(view, options) {
 });
 
 //called from View.prototype.html()
-function appendViews(scope, log) {
+function appendViews(scope) {
   if (!this._views) {
     return;
   }

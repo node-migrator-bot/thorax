@@ -231,6 +231,14 @@ $(function() {
     view.render();
     equal(view.$('li').length, letterCollection.models.length * 2);
 
+    view = new Application.View({
+      template: '{{collection a tag="ul" item-template="letter-item"}}{{collection a tag="ul" item-template="letter-item"}}{{collection b tag="ul" item-template="letter-item"}}{{collection b tag="ul" item-template="letter-item"}}',
+      a: new Application.Collection(letterCollection.models),
+      b: new Application.Collection(letterCollection.models)
+    });
+    view.render();
+    equal(view.$('li').length, letterCollection.models.length * 4);
+
     var SubViewWithSameCollection = Application.View.extend({
       name: 'sub-view-with-same-collection',
       template: '{{collection a tag="ul" item-template="letter-item"}}'
