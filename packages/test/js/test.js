@@ -325,53 +325,81 @@ $(function() {
   });
 
   test("nested collection helper", function() {
-    var blogModel = new Application.Model();
-    Application.View.extend({
-      name: 'Comments',
-      template: '{{#collection comments}}<p>{{comment}}</p>{{/collection}}'
-    });
-    var view = new Application.View({
-      template: '{{#empty posts}}empty{{else}}{{#collection posts name="outer"}}<h2>{{title}}</h2>{{view "Comments" comments=comments}}</div>{{/collection}}{{/empty}}',
-      model: blogModel
-    });
-    equal(view.$('[data-partial-cid]').html(), 'empty');
-    var comments1 = new Application.Collection([
-      new Application.Model({comment: 'comment one'}),
-      new Application.Model({comment: 'comment two'})
-    ]);
-    var comments2 = new Application.Collection([
-      new Application.Model({comment: 'comment three'}),
-      new Application.Model({comment: 'comment four'})
-    ]);
-    blogModel.set({
-      posts: new Application.Collection([
+    function testNesting(view, msg) {
+      var blogModel = new Application.Model();
+      view.setModel(blogModel);
+      equal(view.$('[data-partial-cid]').html(), 'empty', msg + ' : starts empty');
+      var authors = [
+        new Application.Model({author: 'author 1'}),
+        new Application.Model({author: 'author 2'})
+      ];
+      var comments1 = new Application.Collection([
         new Application.Model({
-          title: 'title one',
-          comments: comments1
+          comment: 'comment one',
+          authors: new Application.Collection(authors)
         }),
         new Application.Model({
-          title: 'title two',
-          comments: comments2
+          comment: 'comment two',
+          authors: new Application.Collection(authors)
         })
-      ])
+      ]);
+      var comments2 = new Application.Collection([
+        new Application.Model({
+          comment: 'comment three',
+          authors: new Application.Collection(authors)
+        }),
+        new Application.Model({
+          comment: 'comment four',
+          authors: new Application.Collection(authors)
+        })
+      ]);
+      blogModel.set({
+        posts: new Application.Collection([
+          new Application.Model({
+            title: 'title one',
+            comments: comments1
+          }),
+          new Application.Model({
+            title: 'title two',
+            comments: comments2
+          })
+        ])
+      });
+      equal(view.$('h2').length, 2, msg + ' : title length');
+      equal(view.$('h2')[0].innerHTML, 'title one', msg + ' : title content');
+      equal(view.$('h2')[1].innerHTML, 'title two', msg + ' : title content');
+      equal(view.$('p').length, 4, msg + ' : comment length');
+      equal(view.$('p')[0].innerHTML, 'comment one', msg + ' : comment content');
+      equal(view.$('p')[1].innerHTML, 'comment two', msg + ' : comment content');
+      equal(view.$('p')[2].innerHTML, 'comment three', msg + ' : comment content');
+      equal(view.$('p')[3].innerHTML, 'comment four', msg + ' : comment content');
+      equal(view.$('span').length, 8, msg + ' : author length');
+
+      comments2.add(new Application.Model({comment: 'comment five'}));
+      equal(view.$('p')[4].innerHTML, 'comment five', msg + ' : added comment content');
+  
+      blogModel.attributes.posts.add(new Application.Model({
+        title: 'title three'
+      }));
+      equal(view.$('h2').length, 3, msg + ' : added title length');
+      equal(view.$('h2')[2].innerHTML, 'title three', msg + ' : added title content');
+    }
+
+    //test with embedded view
+    Application.View.extend({
+      name: 'Comments',
+      template: '{{#collection comments}}<p>{{comment}}</p>{{#collection authors}}<span>{{author}}</span>{{/collection}}{{/collection}}'
     });
-    equal(view.$('h2').length, 2);
-    equal(view.$('h2')[0].innerHTML, 'title one');
-    equal(view.$('h2')[1].innerHTML, 'title two');
-    equal(view.$('p').length, 4);
-    equal(view.$('p')[0].innerHTML, 'comment one');
-    equal(view.$('p')[1].innerHTML, 'comment two');
-    equal(view.$('p')[2].innerHTML, 'comment three');
-    equal(view.$('p')[3].innerHTML, 'comment four');
+    var view = new Application.View({
+      template: '{{#empty posts}}empty{{else}}{{#collection posts name="outer"}}<h2>{{title}}</h2>{{view "Comments" comments=comments}}</div>{{/collection}}{{/empty}}'
+    });
+    testNesting(view, 'nested view');
 
-    comments2.add(new Application.Model({comment: 'comment five'}));
-    equal(view.$('p')[4].innerHTML, 'comment five');
-
-    blogModel.attributes.posts.add(new Application.Model({
-      title: 'title three'
-    }));
-    equal(view.$('h2').length, 3);
-    equal(view.$('h2')[2].innerHTML, 'title three');
+    //test with multiple inline nesting
+    view = new Application.View({
+      template: '{{#empty posts}}empty{{else}}{{#collection posts name="outer"}}<h2>{{title}}</h2>{{#collection comments}}<p>{{comment}}</p>{{#collection authors}}<span>{{author}}</span>{{/collection}}{{/collection}}</div>{{/collection}}{{/empty}}'
+    });
+    testNesting(view, 'nested inline');
   });
 
   test("graceful failure of empty collection with no empty template", function() {

@@ -14,7 +14,7 @@ View.registerHelper('view', function(view, options) {
 });
 
 //called from View.prototype.html()
-function appendViews(scope, log) {
+function appendViews(scope) {
   if (!this._views) {
     return;
   }

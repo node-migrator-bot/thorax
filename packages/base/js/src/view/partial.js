@@ -22,8 +22,10 @@ _.extend(Partial.prototype, Backbone.Events, {
     } else {
       //html may be a SafeString, so call toString()
       var element = this.$el.html(html.toString());
+      //TODO: find better solution for problem of partials embedding views embedding partials embedding....
       appendPartials.call(this.view, this.el);
-      appendViews.call(this.view, this.el, true);
+      appendViews.call(this.view, this.el);
+      appendPartials.call(this.view, this.el);
       return element;
     }
   },

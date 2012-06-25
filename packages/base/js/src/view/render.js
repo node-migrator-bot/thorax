@@ -61,8 +61,10 @@ _.extend(View.prototype, {
       return this.el.innerHTML;
     } else {
       var element = this.$el.html(html);
+      //TODO: find better solution for problem of partials embedding views embedding partials embedding....
       appendPartials.call(this);
       appendViews.call(this);
+      appendPartials.call(this);
       return element;
     }
   }
