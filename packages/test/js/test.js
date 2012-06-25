@@ -286,23 +286,22 @@ $(function() {
     equal(b.$('[data-collection-cid] div')[0].innerHTML, 'a');
   });
 
-  //FAIL!
-  //test("bindCollection or model.set can be called in context()", function() {
-  //  //this causes recursion
-  //  var view = new Application.View({
-  //    model: new Application.Model(),
-  //    template: '{{key}}{{#collection test}}{{key}}{{/collection}}',
-  //    context: function() {
-  //      this.model.set({key: 'value'});
-  //      return {
-  //        key: 'value',
-  //        test: new Application.Collection([{key: 'value'}])
-  //      };
-  //    }
-  //  });
-  //  view.render();
-  //  equal(view.$('[data-collection-cid] div')[0].innerHTML, 'value');
-  //});
+  test("_bindCollection or model.set can be called in context()", function() {
+    //this causes recursion
+    var view = new Application.View({
+      model: new Application.Model(),
+      template: '{{key}}{{#collection test}}{{key}}{{/collection}}',
+      context: function() {
+        this.model.set({key: 'value'});
+        return {
+          key: 'value',
+          test: new Application.Collection([{key: 'value'}])
+        };
+      }
+    });
+    view.render();
+    equal(view.$('[data-collection-cid] div')[0].innerHTML, 'value');
+  });
 
   test("filter what items are rendered in a collection", function() {
     var view = new Application.View({
