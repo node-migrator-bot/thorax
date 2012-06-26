@@ -616,12 +616,17 @@ _.extend(Partial.prototype, Backbone.Events, {
       return element;
     }
   },
+  render: function(options) {
+    console.log(this.context(options));
+    this.html(this.fn(this.context(options)));
+  },
   freeze: function() {
     this.trigger('freeze');
   },
   destroy: function() {
     this.freeze();
     this.trigger('destroyed');
+    this.off();
   },
   context: function(options) {
     return _.extend(this.view._getContext(this.view.model), options || {});

@@ -677,46 +677,6 @@ $(function() {
     outer.render();
     equal(outer.$('.c').html(), 'value');
   });
-
-  /*
-  test("partials", function() {
-    var partialViewByName = new Application.View({
-      counter: function() {
-        this.count || (this.count = 0);
-        var c = ++this.count;
-        return c;
-      },
-      template: '{{partial "counter" tag="span"}}'
-    });
-    partialViewByName.render();
-    equal(partialViewByName.$('span').html(), '1');
-    equal(partialViewByName.count, 1);
-    partialViewByName.counter();
-    equal(partialViewByName.$('span').html(), '2');
-    equal(partialViewByName.count, 2);
-
-    var partialViewWithBlock = new Application.View({
-      counter: function(options) {
-        this.count || (this.count = 0);
-        ++this.count;
-        if (options.hash.count) {
-          this.count = options.hash.count;
-        }
-        return options.fn(this);
-      },
-      template: '{{#partial "counter" tag="ul"}}<li>{{count}}</li>{{/partial}}'
-    });
-    partialViewWithBlock.render();
-    equal(partialViewWithBlock.$('ul li').html(), '1');
-    equal(partialViewWithBlock.count, 1);
-    partialViewWithBlock.counter();
-    equal(partialViewWithBlock.$('ul li').html(), '2');
-    equal(partialViewWithBlock.count, 2);
-    equal(partialViewWithBlock.$('ul li').html(), '2');
-    partialViewWithBlock.counter({count: 4});
-    equal(partialViewWithBlock.count, 4);
-  });
-*/
   
   test("Inheritable events", function() {
     var Parent = Application.View.extend({}),
