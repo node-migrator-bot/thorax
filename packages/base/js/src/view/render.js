@@ -34,6 +34,7 @@ _.extend(View.prototype, {
   },
 
   renderTemplate: function(file, data, ignoreErrors) {
+    var template;
     data = getTemplateContext.call(this, data);
     if (typeof file === 'function') {
       template = file;

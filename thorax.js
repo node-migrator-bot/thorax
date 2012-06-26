@@ -537,6 +537,7 @@ _.extend(View.prototype, {
   },
 
   renderTemplate: function(file, data, ignoreErrors) {
+    var template;
     data = getTemplateContext.call(this, data);
     if (typeof file === 'function') {
       template = file;
@@ -589,7 +590,7 @@ var Partial = function(cid, view, options) {
   this.view = view;
   this.fn = options.fn;
   this.inverse = options.inverse;
-  this.options = options.hash;
+  this.options = options.hash || {};
   this._ensureElement();
 };
 
@@ -630,22 +631,30 @@ _.extend(Partial.prototype, Backbone.Events, {
 _.extend(View.prototype, {
   partial: function(options) {
     var cid = _.uniqueId('partial');
-    return new Partial(cid, this, options);
+    return new Partial(cid, this, options || {});
   }
 });
 
 View.registerPartialHelper = function(name, callback) {
-  return View.registerHelper(name, function() {
+  var callbacks = [];
+  var helper = View.registerHelper(name, function() {
     var args = _.toArray(arguments),
         options = args.pop(),
         partial = this._view.partial(options);
     args.push(partial);
     this._view._partials[partial.cid] = partial;
+    callbacks.forEach(function(injectedCallback) {
+      injectedCallback.apply(this, args);
+    }, this);
     var htmlAttributes = {};
     htmlAttributes[partialPlaceholderAttributeName] = partial.cid;
     callback.apply(this, args);
     return new Handlebars.SafeString(View.tag(htmlAttributes, ''));
   });
+  helper.addCallback = function(injectedCallback) {
+    callbacks.push(injectedCallback);
+  }
+  return helper;
 };
 
 //called from View.prototype.html()
@@ -671,6 +680,7 @@ _.extend(View, {
   registerHelper: function(name, callback) {
     this[name] = callback;
     Handlebars.registerHelper(name, this[name]);
+    return callback;
   },
   expandToken: function(input, scope) {
     if (input && input.indexOf && input.indexOf('{{') >= 0) {
@@ -789,7 +799,7 @@ function appendViews(scope) {
   }
   _.toArray($(scope || this.el).find('[' + viewPlaceholderAttributeName + ']')).forEach(function(el) {
     var placeholder_id = el.getAttribute(viewPlaceholderAttributeName),
-        cid = placeholder_id.replace(/\-placeholder\d+$/, '');
+        cid = placeholder_id.replace(/\-placeholder\d+$/, ''),
         view = this._views[cid];
     if (view) {
       //see if the {{#view}} helper declared an override for the view
@@ -807,7 +817,7 @@ function appendViews(scope) {
 
 internalViewEvents.collection = {
   add: function(partial, model, collection) {
-    var collectionElement = partial.$el;
+    var collectionElement = partial.$el,
         collectionOptions = partial.options;
     if (collection.length === 1) {
       if(collectionElement.length) {

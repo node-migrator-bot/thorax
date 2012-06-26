@@ -340,9 +340,19 @@ _.extend(Thorax.View.prototype, {
       exports.trigger(loadStart, message, background, object);
     }
     $(this.el).addClass(this._loadingClassName);
+    if (this._loadingCallbacks) {
+      this._loadingCallbacks.forEach(function(callback) {
+        callback();
+      });
+    }
   },
   onLoadEnd: function(background, object) {
     $(this.el).removeClass(this._loadingClassName);
+    if (this._loadingCallbacks) {
+      this._loadingCallbacks.forEach(function(callback) {
+        callback();
+      });
+    }
   }
 });
 
@@ -376,61 +386,55 @@ Thorax.View.registerPartialHelper('loading', function(collectionOrModel, partial
   function callback(scope) {
     var content;
     if (partial.view.$el.hasClass(partial.view._loadingClassName)) {
-      content = options.fn(scope || partial.context());
+      content = partial.fn(scope || partial.context());
     } else {
-      content = options.inverse(scope || partial.context());
+      content = partial.inverse(scope || partial.context());
     }
     partial.html(content);
   }
 
-  var target = collectionOrModel || partial.view;
-
-  target.on(loadStart, callback);
-  target.on(loadEnd, callback);
-
-  partial.bind('freeze', function() {
-    target.off(loadStart, callback);
-    target.off(loadEnd, callback);
-  });
+  this._view._loadingCallbacks = this._view._loadingCallbacks || [];
+  this._view._loadingCallbacks.push(callback);
+  partial.on('destroyed', function() {
+    this._view._loadingCallbacks = _.without(this._view._loadingCallbacks, callback);
+  }, this);
 
   callback(this);
 });
 
-var oldCollectionHelper = Handlebars.helpers.collection;
-Thorax.View.collection = Handlebars.helpers.collection = function(collection, options) {
+Handlebars.helpers.collection.addCallback(function(collection, partial) {
   if (arguments.length === 1) {
-    options = collection;
+    partial = collection;
     collection = this._view.collection;
   }
-  if (options.hash['loading-view'] || options.hash['loading-template']) {
-    var item, collectionElement;
-    collection.bind(loadStart, Thorax.loadHandler(_.bind(function() {
-      collectionElement = this._view._getCollectionElement(collection);
+  var collectionElement = partial.$el;
+  if (partial.options['loading-view'] || partial.options['loading-template']) {
+    var item;
+    var callback = Thorax.loadHandler(_.bind(function() {
       if (collection.length === 0) {
         collectionElement.empty();
       }
-      if (options.hash['loading-view']) {
-        var view = this.view(options.hash['loading-view'], this);
-        view.render(options.hash['loading-template']);
+      if (partial.options['loading-view']) {
+        var view = this.view(partial.options['loading-view'], this);
+        if (partial.options['loading-template']) {
+          view.render(this.renderTemplate(partial.options['loading-template'], this));
+        } else {
+          view.render();
+        }
         item = view;
       } else {
-        item = this.template(options.hash['loading-template'], this);
+        item = this.renderTemplate(partial.options['loading-template'], this);
       }
-      this._view.appendItem(collection, item, collection.length, {
-        collectionElement: collectionElement
-      });
+      this._view.appendItem(partial, collection, item, collection.length);
       collectionElement.children().last().attr('data-loading-element', collection.cid);
     }, this), _.bind(function() {
-      collectionElement = collectionElement || this._view._getCollectionElement(collection);
       collectionElement.find('[data-loading-element="' + collection.cid + '"]').remove();
-    }, this)));
+    }, this));
+    collection.on(loadStart, callback);
+    partial.on('freeze', function() {
+      collection.off(loadStart, callback);
+    });
   }
-  var clonedOptionsHash = _.clone(options.hash);
-  delete clonedOptionsHash['loading-view'];
-  delete clonedOptionsHash['loading-template'];
-  var clonedOptions = _.clone(options);
-  clonedOptions.hash = clonedOptionsHash;
-  return oldCollectionHelper.call(this, collection, clonedOptions);
-};
+}); 
 
 })();

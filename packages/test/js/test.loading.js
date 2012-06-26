@@ -72,7 +72,7 @@ $(function(){
     var collection = new Application.Collection({url: 'foo'}),
         view = new Application.View({name: 'food', render: function(){}, renderItem: function() {}, collection: collection}),
         spy = this.spy(view, 'onLoadEnd');
-    view._bindCollection(collection, view._partial());
+    view._bindCollection(collection, view.partial());
     collection.loadStart();
     this.clock.tick(1000);
   

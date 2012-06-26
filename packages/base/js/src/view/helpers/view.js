@@ -20,7 +20,7 @@ function appendViews(scope) {
   }
   _.toArray($(scope || this.el).find('[' + viewPlaceholderAttributeName + ']')).forEach(function(el) {
     var placeholder_id = el.getAttribute(viewPlaceholderAttributeName),
-        cid = placeholder_id.replace(/\-placeholder\d+$/, '');
+        cid = placeholder_id.replace(/\-placeholder\d+$/, ''),
         view = this._views[cid];
     if (view) {
       //see if the {{#view}} helper declared an override for the view

@@ -2,6 +2,7 @@ _.extend(View, {
   registerHelper: function(name, callback) {
     this[name] = callback;
     Handlebars.registerHelper(name, this[name]);
+    return callback;
   },
   expandToken: function(input, scope) {
     if (input && input.indexOf && input.indexOf('{{') >= 0) {

@@ -1,6 +1,6 @@
 internalViewEvents.collection = {
   add: function(partial, model, collection) {
-    var collectionElement = partial.$el;
+    var collectionElement = partial.$el,
         collectionOptions = partial.options;
     if (collection.length === 1) {
       if(collectionElement.length) {
