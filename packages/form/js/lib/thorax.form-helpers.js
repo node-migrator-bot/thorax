@@ -2,21 +2,32 @@ var errorClassName = 'error',
     errorAttributeName = 'data-view-error',
     inputErrorAttributeName = 'data-input-error-id';
 
-Thorax.View.registerHelper('error', function(options) {
-  var partialId = _.uniqueId('error-');
-  this._view[partialId] = function(options) {
-    return options.fn(_.extend({}, this, {
-      errors: options.hash.errors
-    }));
-  };
-  options.hash['class'] = options.hash['class'] || 'alert alert-error',
-  options.hash[errorAttributeName] = 'true';
-  return Handlebars.helpers.partial.call(this, partialId, {
-    fn: options.fn,
-    hash: _.extend({
-      anonymous: true
-    }, options.hash)
+Thorax.View.registerPartialHelper('error', function(partial) {
+  if (!partial.el.className || partial.el.className === '') {
+    partial.$el.addClass('alert alert-error');
+  }
+  partial.$el.attr(errorAttributeName, 'true');
+
+  function invokeFn(errors) {
+    partial.html(partial.fn(partial.context({
+      errors: errors
+    })));
+    partial.$el.show();
+  }
+
+  function invokeInverse(scope) {
+    partial.html(partial.inverse(scope || partial.context()));
+    partial.$el.hide();
+  }
+
+  partial.view.on('error', invokeFn);
+  partial.view.on('serialize', invokeInverse);
+  partial.on('freeze', function() {
+    partial.view.off('error', invokeFn);
+    partial.view.off('serialize', invokeInverse);
   });
+
+  invokeInverse(this);
 });
 
 Thorax.View.registerHelper('input-error', function(forInputId, options) {
@@ -141,7 +152,6 @@ Thorax.View.registerHelper('control-group', function(options) {
 });
 
 function resetErrorState() {
-  this.$('[' + errorAttributeName + ']').empty().hide();
   this.$('[' + inputErrorAttributeName + ']').empty().hide();
   this.$('.control-group.' + errorClassName).removeClass(errorClassName);
 }
@@ -159,14 +169,6 @@ Thorax.View.registerEvents({
   rendered: resetErrorState,
   serialize: resetErrorState,
   error: function(errors) {
-    var $error = this.$('[' + errorAttributeName + ']');
-    _.each($error, function(el) {
-      var partialName = $(el).attr('data-partial-name');
-      this[partialName]({
-        errors: errors
-      });
-    }, this);
-    $error.show();
     errors.forEach(function(error) {
       var errorAttributeEl = this.$('[' + inputErrorAttributeName + '="' + error.id + '"]');
       errorAttributeEl.html(error.message);

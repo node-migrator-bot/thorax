@@ -623,8 +623,8 @@ _.extend(Partial.prototype, Backbone.Events, {
     this.freeze();
     this.trigger('destroyed');
   },
-  context: function() {
-    return this.view._getContext(this.view.model);
+  context: function(options) {
+    return _.extend(this.view._getContext(this.view.model), options || {});
   }
 });
 
